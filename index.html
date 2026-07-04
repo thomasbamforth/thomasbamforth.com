@@ -1803,8 +1803,39 @@ function drawPitchBall(g, now){
   g.restore();
   g.restore();
 }
-function drawFx(ts, now){
+/* ---------- ball-under-panel halo ----------
+   The content panels float above the pitch, so the ball can roll
+   underneath them. This draws a soft-edged ring on the fx layer
+   (above the panels) marking where the ball is — EXCEPT while the
+   visitor is actually playing Crumby the Pie (running or mid-quiz),
+   so nothing distracts from the game. */
+const glassPanels = [...document.querySelectorAll('.glass')];
+function ballUnderPanel(){
+  if (state === 'running' || state === 'quiz') return false;   // playing the runner → no halo
+  const r = PITCH_CFG.BALL_RADIUS;
+  for (const el of glassPanels){
+    const b = el.getBoundingClientRect();
+    if (b.bottom < 0 || b.top > PH) continue;                  // panel scrolled off-screen
+    if (pball.x + r > b.left && pball.x - r < b.right &&
+        pball.y + r > b.top  && pball.y - r < b.bottom) return true;
+  }
+  return false;
+}
+function drawHalo(now){
+  const R = PITCH_CFG.BALL_RADIUS + 10;
+  const pulse = 0.8 + 0.2 * Math.sin(now / 320);               // gentle breathing
+  const grad = fctx.createRadialGradient(pball.x, pball.y, R * 0.35, pball.x, pball.y, R);
+  grad.addColorStop(0,    'rgba(34,70,168,0)');
+  grad.addColorStop(0.62, 'rgba(34,70,168,' + (0.10 * pulse).toFixed(3) + ')');
+  grad.addColorStop(0.85, 'rgba(34,70,168,' + (0.32 * pulse).toFixed(3) + ')');
+  grad.addColorStop(1,    'rgba(34,70,168,0)');
+  fctx.fillStyle = grad;
+  fctx.beginPath(); fctx.arc(pball.x, pball.y, R, 0, Math.PI * 2); fctx.fill();
+}
+
+function drawFx(ts, now, halo){
   fctx.clearRect(0, 0, PW, PH);
+  if (halo) drawHalo(now);
   // confetti
   confetti = confetti.filter(p => p.y < PH + 40);
   for (const p of confetti){
@@ -1863,8 +1894,9 @@ function pitchLoop(now){
     drawPitchBall(pctx, now);
   }
 
-  const fxActive = confetti.length > 0 || goalFlash >= 0;
-  if (fxActive){ drawFx(ts, now); fxWasActive = true; }
+  const halo = ballUnderPanel();
+  const fxActive = confetti.length > 0 || goalFlash >= 0 || halo;
+  if (fxActive){ drawFx(ts, now, halo); fxWasActive = true; }
   else if (fxWasActive){ fctx.clearRect(0, 0, PW, PH); fxWasActive = false; }
 
   requestAnimationFrame(pitchLoop);
