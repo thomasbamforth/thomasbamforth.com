@@ -1823,8 +1823,8 @@ function ballUnderPanel(){
 }
 function drawHalo(now){
   // a porthole through the card: the real ball + surrounding pitch,
-  // rimmed with a soft white ring
-  const R = PITCH_CFG.BALL_RADIUS + 16;
+  // with a white rim that feathers inward into the lens
+  const R = PITCH_CFG.BALL_RADIUS + 10;
   const x = pball.x, y = pball.y;
 
   fctx.save();
@@ -1832,22 +1832,20 @@ function drawHalo(now){
   fctx.drawImage(pitchLayer, 0, 0, PW, PH);                    // grass + chalk under the ball
   drawCleats(fctx, now);                                       // any fresh footprints too
   drawPitchBall(fctx, now);                                    // and the ball itself
-  // subtle inner shading so the lens reads as recessed
-  const sh = fctx.createRadialGradient(x, y, R * 0.68, x, y, R);
-  sh.addColorStop(0, 'rgba(50,70,40,0)');
-  sh.addColorStop(1, 'rgba(50,70,40,0.12)');
-  fctx.fillStyle = sh;
+  // white rim fading inward (strongest at the edge, gone by mid-lens)
+  const pulse = 0.82 + 0.18 * Math.sin(now / 320);
+  const rim = fctx.createRadialGradient(x, y, R * 0.55, x, y, R);
+  rim.addColorStop(0,   'rgba(255,255,255,0)');
+  rim.addColorStop(0.7, 'rgba(255,255,255,' + (0.28 * pulse).toFixed(3) + ')');
+  rim.addColorStop(1,   'rgba(255,255,255,' + (0.95 * pulse).toFixed(3) + ')');
+  fctx.fillStyle = rim;
   fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.fill();
   fctx.restore();
 
-  // white ring with a gentle pulse + whisper of dark edge for contrast
-  const pulse = 0.82 + 0.18 * Math.sin(now / 320);
-  fctx.lineWidth = 2.5;
-  fctx.strokeStyle = 'rgba(255,255,255,' + (0.92 * pulse).toFixed(3) + ')';
-  fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.stroke();
+  // whisper of dark edge just outside, so the white rim reads on pale cards
   fctx.lineWidth = 1.5;
   fctx.strokeStyle = 'rgba(60,80,50,0.16)';
-  fctx.beginPath(); fctx.arc(x, y, R + 2, 0, Math.PI * 2); fctx.stroke();
+  fctx.beginPath(); fctx.arc(x, y, R + 1, 0, Math.PI * 2); fctx.stroke();
 }
 
 function drawFx(ts, now, halo){
