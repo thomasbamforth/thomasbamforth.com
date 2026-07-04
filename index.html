@@ -1822,15 +1822,32 @@ function ballUnderPanel(){
   return false;
 }
 function drawHalo(now){
-  const R = PITCH_CFG.BALL_RADIUS + 10;
-  const pulse = 0.8 + 0.2 * Math.sin(now / 320);               // gentle breathing
-  const grad = fctx.createRadialGradient(pball.x, pball.y, R * 0.35, pball.x, pball.y, R);
-  grad.addColorStop(0,    'rgba(34,70,168,0)');
-  grad.addColorStop(0.62, 'rgba(34,70,168,' + (0.10 * pulse).toFixed(3) + ')');
-  grad.addColorStop(0.85, 'rgba(34,70,168,' + (0.32 * pulse).toFixed(3) + ')');
-  grad.addColorStop(1,    'rgba(34,70,168,0)');
-  fctx.fillStyle = grad;
-  fctx.beginPath(); fctx.arc(pball.x, pball.y, R, 0, Math.PI * 2); fctx.fill();
+  // a porthole through the card: the real ball + surrounding pitch,
+  // rimmed with a soft white ring
+  const R = PITCH_CFG.BALL_RADIUS + 16;
+  const x = pball.x, y = pball.y;
+
+  fctx.save();
+  fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.clip();
+  fctx.drawImage(pitchLayer, 0, 0, PW, PH);                    // grass + chalk under the ball
+  drawCleats(fctx, now);                                       // any fresh footprints too
+  drawPitchBall(fctx, now);                                    // and the ball itself
+  // subtle inner shading so the lens reads as recessed
+  const sh = fctx.createRadialGradient(x, y, R * 0.68, x, y, R);
+  sh.addColorStop(0, 'rgba(50,70,40,0)');
+  sh.addColorStop(1, 'rgba(50,70,40,0.12)');
+  fctx.fillStyle = sh;
+  fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.fill();
+  fctx.restore();
+
+  // white ring with a gentle pulse + whisper of dark edge for contrast
+  const pulse = 0.82 + 0.18 * Math.sin(now / 320);
+  fctx.lineWidth = 2.5;
+  fctx.strokeStyle = 'rgba(255,255,255,' + (0.92 * pulse).toFixed(3) + ')';
+  fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.stroke();
+  fctx.lineWidth = 1.5;
+  fctx.strokeStyle = 'rgba(60,80,50,0.16)';
+  fctx.beginPath(); fctx.arc(x, y, R + 2, 0, Math.PI * 2); fctx.stroke();
 }
 
 function drawFx(ts, now, halo){
