@@ -395,7 +395,7 @@ footer a:hover{ text-decoration:underline; }
 <!-- ================= LEADERBOARD ================= -->
 <section class="board-section" id="board-section">
   <h2>🏆 The Pie League</h2>
-  <p class="board-sub">Top 10 runs on this device — finish a run, claim your spot.</p>
+  <p class="board-sub" id="board-sub">Top 10 runs — finish a run, claim your spot.</p>
   <ol id="board-list"></ol>
   <p id="board-empty">No entries yet. The table awaits its first legend.</p>
 </section>
@@ -1140,36 +1140,86 @@ function pickOption(i){
 /* ============================================================
    LEADERBOARD — "The Pie League"
 
-   Stored in localStorage, so it's per-browser/per-device (a truly
-   global leaderboard needs a backend — this file stays static).
-   To go global later, replace loadBoard()/persistBoard() with
-   fetch() calls to your API and everything else keeps working.
+   Two modes, picked automatically:
+   • GLOBAL — when SUPABASE_URL + SUPABASE_ANON_KEY are filled in,
+     scores are read/written to a Supabase table shared by every
+     visitor (via its REST API — no SDK, stays one static file).
+     The anon key is *designed* to be public; safety comes from
+     Row Level Security on the table (insert/select only).
+   • LOCAL — if those are empty or the network fails, it falls
+     back to per-device localStorage so the game never breaks.
    ============================================================ */
+const SUPABASE_URL      = 'https://eurxcpmkgnggnscohzae.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_-ILhIf2qjEkqUtvz9SpJ4w_XfSEvaxm';
+const BOARD_TABLE = 'pie_scores';
+const BOARD_REMOTE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
 const BOARD_KEY = 'tb-pie-board';
-const BOARD_MAX = 10;                 // how many entries the table keeps
+const BOARD_MAX = 10;                 // how many entries the table shows
 const claimBox   = document.getElementById('claim');
 const claimText  = document.getElementById('claim-text');
 const claimForm  = document.getElementById('claim-form');
 const claimName  = document.getElementById('claim-name');
+const claimBtn   = claimForm.querySelector('button');
 const boardList  = document.getElementById('board-list');
 const boardEmpty = document.getElementById('board-empty');
+const boardSub   = document.getElementById('board-sub');
 let pendingScore = null;              // score awaiting a name
+let boardCache = [];                  // last board we saw (drives "does my score qualify?")
 
-function loadBoard(){
+function loadLocalBoard(){
   try {
     const b = JSON.parse(localStorage.getItem(BOARD_KEY) || '[]');
     return Array.isArray(b) ? b : [];
   } catch(e){ return []; }
 }
-function persistBoard(b){
+function persistLocalBoard(b){
   localStorage.setItem(BOARD_KEY, JSON.stringify(b));
 }
+
+/* --- Supabase REST calls (PostgREST) --- */
+function sbHeaders(extra){
+  return Object.assign({
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+  }, extra || {});
+}
+async function fetchRemoteBoard(){
+  const q = SUPABASE_URL + '/rest/v1/' + BOARD_TABLE
+          + '?select=name,score&order=score.desc,created_at.asc&limit=' + BOARD_MAX;
+  const r = await fetch(q, { headers: sbHeaders() });
+  if (!r.ok) throw new Error('board fetch failed: ' + r.status);
+  return r.json();
+}
+async function submitRemoteScore(name, score){
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + BOARD_TABLE, {
+    method: 'POST',
+    headers: sbHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+    body: JSON.stringify({ name, score }),
+  });
+  if (!r.ok) throw new Error('score submit failed: ' + r.status);
+}
+
+async function refreshBoard(){
+  if (BOARD_REMOTE){
+    try {
+      boardCache = await fetchRemoteBoard();
+      boardSub.textContent = 'Top 10 runs worldwide — finish a run, claim your spot.';
+    } catch(e){
+      boardCache = loadLocalBoard();
+      boardSub.textContent = 'Leaderboard unreachable — showing this device’s scores.';
+    }
+  } else {
+    boardCache = loadLocalBoard();
+    boardSub.textContent = 'Top 10 runs on this device — finish a run, claim your spot.';
+  }
+  renderBoard();
+}
 function renderBoard(){
-  const board = loadBoard();
-  boardEmpty.hidden = board.length > 0;
+  boardEmpty.hidden = boardCache.length > 0;
   boardList.innerHTML = '';
   const medals = ['🥇','🥈','🥉'];
-  board.forEach((entry, i)=>{
+  boardCache.forEach((entry, i)=>{
     const li = document.createElement('li');
     const rank = document.createElement('span');
     rank.className = 'rank';
@@ -1188,8 +1238,7 @@ function renderBoard(){
 }
 function boardQualifies(s){
   if (s <= 0) return false;
-  const board = loadBoard();
-  return board.length < BOARD_MAX || s > board[board.length - 1].score;
+  return boardCache.length < BOARD_MAX || s > boardCache[boardCache.length - 1].score;
 }
 /* Called when a run truly ends (wrong quiz answer → game over). */
 function offerBoardSpot(s){
@@ -1198,21 +1247,36 @@ function offerBoardSpot(s){
   claimText.textContent = '🏆 ' + pad5(s) + ' makes The Pie League!';
   claimBox.hidden = false;
 }
-claimForm.addEventListener('submit', (e)=>{
+claimForm.addEventListener('submit', async (e)=>{
   e.preventDefault();
   if (pendingScore === null) return;
   const name = (claimName.value.trim() || 'Anonymous Pie').slice(0, 20);
-  const board = loadBoard();
-  board.push({ name, score: pendingScore, when: Date.now() });
-  board.sort((a,b)=> b.score - a.score || a.when - b.when);
-  persistBoard(board.slice(0, BOARD_MAX));
-  pendingScore = null;
-  claimName.value = '';
-  claimBox.hidden = true;
-  renderBoard();
-  document.getElementById('board-section').scrollIntoView({ behavior:'smooth', block:'center' });
+  const scoreToPost = pendingScore;
+
+  claimBtn.disabled = true;
+  claimBtn.textContent = '…';
+  try {
+    if (BOARD_REMOTE){
+      await submitRemoteScore(name, scoreToPost);
+    } else {
+      const board = loadLocalBoard();
+      board.push({ name, score: scoreToPost, when: Date.now() });
+      board.sort((a,b)=> b.score - a.score || (a.when||0) - (b.when||0));
+      persistLocalBoard(board.slice(0, BOARD_MAX));
+    }
+    pendingScore = null;
+    claimName.value = '';
+    claimBox.hidden = true;
+    await refreshBoard();
+    document.getElementById('board-section').scrollIntoView({ behavior:'smooth', block:'center' });
+  } catch(err){
+    claimText.textContent = '⚠️ Couldn’t reach the leaderboard — try again?';
+  } finally {
+    claimBtn.disabled = false;
+    claimBtn.textContent = 'add me';
+  }
 });
-renderBoard();
+refreshBoard();
 
 /* ============================================================
    MISC
