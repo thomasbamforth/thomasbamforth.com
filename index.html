@@ -1386,42 +1386,44 @@ let pitchActiveUntil = 0; // we stop repainting shortly after everything settles
 
 const ptr = { x:-9999, y:-9999, px:-9999, py:-9999, vx:0, vy:0, has:false, walked:0, side:1, lastT:0 };
 
-/* ---------- geometry + prerendered pitch art ---------- */
+/* ---------- geometry + prerendered pitch art ----------
+   The pitch adapts to the window: landscape → horizontal play
+   (goals left & right), portrait (phones) → vertical play. */
 function computeGeom(){
-  const mx = Math.max(16, PW * 0.05);
-  const my = Math.max(46, PH * 0.075);
-  const x0 = mx, x1 = PW - mx, y0 = my, y1 = PH - my;
+  const horiz = PW > PH;
+  const mLong = Math.max(46, (horiz ? PW : PH) * 0.075);  // margin behind each goal
+  const mSide = Math.max(16, (horiz ? PH : PW) * 0.05);   // touchline margin
+  const x0 = horiz ? mLong : mSide, x1 = PW - x0;
+  const y0 = horiz ? mSide : mLong, y1 = PH - y0;
   const w = x1 - x0, h = y1 - y0;
+  const long = horiz ? w : h;                 // goal-to-goal length
+  const side = horiz ? h : w;                 // touchline-to-touchline width
   G = {
-    x0, x1, y0, y1, w, h, cx: PW / 2, cy: PH / 2,
+    horiz, x0, x1, y0, y1, w, h, cx: PW / 2, cy: PH / 2,
     circleR: Math.min(w, h) * 0.135,
-    goalW: Math.min(w * 0.36, 250),           // goal mouth width
-    goalD: Math.min(my - 8, 34),              // net depth beyond the line
-    penW: Math.min(w * 0.62, 460), penD: h * 0.15,
-    sixW: Math.min(w * 0.32, 240), sixD: h * 0.066,
-    spotD: h * 0.105,
+    goalW: Math.min(side * 0.36, 250),        // goal mouth width
+    goalD: Math.min(mLong - 8, 34),           // net depth beyond the line
+    penW: Math.min(side * 0.62, 460), penD: long * 0.15,
+    sixW: Math.min(side * 0.32, 240), sixD: long * 0.066,
+    spotD: long * 0.105,
   };
 }
 function chalkLine(g, ax, ay, bx, by){ g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); }
 function chalkCircle(g, x, y, r){ g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); }
 function chalkDot(g, x, y, r){ g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,0.92)'; g.fill(); }
-function chalkBox(g, cx, edgeY, w, d, dir){ // dir 1 = box extends downward from edge
-  g.strokeRect(cx - w / 2, dir === 1 ? edgeY : edgeY - d, w, d);
-}
-function drawNet(g, cx, lineY, w, d, dir){ // dir -1 = net extends up beyond the line
-  const x = cx - w / 2, y = dir === -1 ? lineY - d : lineY;
+function drawNet(g, x, y, w, h){
   g.fillStyle = 'rgba(255,255,255,0.16)';
-  g.fillRect(x, y, w, d);
+  g.fillRect(x, y, w, h);
   g.save();
   g.strokeStyle = 'rgba(255,255,255,0.45)';
   g.lineWidth = 1;
-  for (let i = 7; i < w; i += 7)  chalkLine(g, x + i, y, x + i, y + d);
-  for (let j = 7; j < d; j += 7)  chalkLine(g, x, y + j, x + w, y + j);
+  for (let i = 7; i < w; i += 7)  chalkLine(g, x + i, y, x + i, y + h);
+  for (let j = 7; j < h; j += 7)  chalkLine(g, x, y + j, x + w, y + j);
   g.restore();
   g.save();
   g.strokeStyle = 'rgba(255,255,255,0.95)';
   g.lineWidth = 3;
-  g.strokeRect(x, y, w, d);
+  g.strokeRect(x, y, w, h);
   g.restore();
 }
 function prerenderPitch(dpr){
@@ -1429,11 +1431,20 @@ function prerenderPitch(dpr){
   const g = pitchLayer.getContext('2d');
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // mowing stripes across the whole window
-  const bands = 14, bh = PH / bands;
-  for (let i = 0; i < bands; i++){
-    g.fillStyle = i % 2 ? '#e6ecd8' : '#ebf0df';
-    g.fillRect(0, i * bh, PW, bh + 1);
+  // mowing stripes run perpendicular to the direction of play
+  const bands = 14;
+  if (G.horiz){
+    const bw = PW / bands;
+    for (let i = 0; i < bands; i++){
+      g.fillStyle = i % 2 ? '#e6ecd8' : '#ebf0df';
+      g.fillRect(i * bw, 0, bw + 1, PH);
+    }
+  } else {
+    const bh = PH / bands;
+    for (let i = 0; i < bands; i++){
+      g.fillStyle = i % 2 ? '#e6ecd8' : '#ebf0df';
+      g.fillRect(0, i * bh, PW, bh + 1);
+    }
   }
   // gentle vignette for depth
   const vg = g.createRadialGradient(G.cx, G.cy, Math.min(PW, PH) * 0.3, G.cx, G.cy, Math.max(PW, PH) * 0.75);
@@ -1446,24 +1457,36 @@ function prerenderPitch(dpr){
   g.lineWidth = 2; g.lineCap = 'round'; g.lineJoin = 'round';
   const { x0, x1, y0, y1, cx, cy } = G;
   g.strokeRect(x0, y0, G.w, G.h);                 // touchlines
-  chalkLine(g, x0, cy, x1, cy);                   // halfway line
+  if (G.horiz) chalkLine(g, cx, y0, cx, y1);      // halfway line
+  else         chalkLine(g, x0, cy, x1, cy);
   chalkCircle(g, cx, cy, G.circleR);              // centre circle
   chalkDot(g, cx, cy, 3);                         // centre spot
 
-  for (const dir of [1, -1]){                     // 1 = top end, -1 = bottom end
-    const edge = dir === 1 ? y0 : y1;
-    chalkBox(g, cx, edge, G.penW, G.penD, dir);
-    chalkBox(g, cx, edge, G.sixW, G.sixD, dir);
-    const spotY = edge + dir * G.spotD;
-    chalkDot(g, cx, spotY, 2.5);
-    // penalty arc — only the part outside the box
-    const r = G.circleR * 0.75;
-    const dy = G.penD - G.spotD;
-    const a = Math.asin(Math.min(1, Math.max(-1, dy / r)));
-    g.beginPath();
-    if (dir === 1) g.arc(cx, spotY, r, a, Math.PI - a);
-    else           g.arc(cx, spotY, r, Math.PI + a, -a);
-    g.stroke();
+  const r = G.circleR * 0.75;                     // penalty arc radius
+  const aCut = Math.asin(Math.min(1, Math.max(-1, (G.penD - G.spotD) / r)));
+  for (const dir of [1, -1]){                     // 1 = first end (top/left)
+    if (G.horiz){
+      const edge = dir === 1 ? x0 : x1;
+      g.strokeRect(dir === 1 ? edge : edge - G.penD, cy - G.penW / 2, G.penD, G.penW);
+      g.strokeRect(dir === 1 ? edge : edge - G.sixD, cy - G.sixW / 2, G.sixD, G.sixW);
+      const spotX = edge + dir * G.spotD;
+      chalkDot(g, spotX, cy, 2.5);
+      const b = Math.PI / 2 - aCut;               // arc bulges toward midfield
+      g.beginPath();
+      if (dir === 1) g.arc(spotX, cy, r, -b, b);
+      else           g.arc(spotX, cy, r, Math.PI - b, Math.PI + b);
+      g.stroke();
+    } else {
+      const edge = dir === 1 ? y0 : y1;
+      g.strokeRect(cx - G.penW / 2, dir === 1 ? edge : edge - G.penD, G.penW, G.penD);
+      g.strokeRect(cx - G.sixW / 2, dir === 1 ? edge : edge - G.sixD, G.sixW, G.sixD);
+      const spotY = edge + dir * G.spotD;
+      chalkDot(g, cx, spotY, 2.5);
+      g.beginPath();
+      if (dir === 1) g.arc(cx, spotY, r, aCut, Math.PI - aCut);
+      else           g.arc(cx, spotY, r, Math.PI + aCut, -aCut);
+      g.stroke();
+    }
   }
   // corner arcs
   g.beginPath(); g.arc(x0, y0, 12, 0, Math.PI / 2);            g.stroke();
@@ -1471,8 +1494,13 @@ function prerenderPitch(dpr){
   g.beginPath(); g.arc(x1, y1, 12, Math.PI, Math.PI * 1.5);    g.stroke();
   g.beginPath(); g.arc(x0, y1, 12, Math.PI * 1.5, Math.PI * 2);g.stroke();
   // goals
-  drawNet(g, cx, y0, G.goalW, G.goalD, -1);
-  drawNet(g, cx, y1, G.goalW, G.goalD, 1);
+  if (G.horiz){
+    drawNet(g, x0 - G.goalD, cy - G.goalW / 2, G.goalD, G.goalW);
+    drawNet(g, x1,           cy - G.goalW / 2, G.goalD, G.goalW);
+  } else {
+    drawNet(g, cx - G.goalW / 2, y0 - G.goalD, G.goalW, G.goalD);
+    drawNet(g, cx - G.goalW / 2, y1,           G.goalW, G.goalD);
+  }
 }
 function pitchResize(){
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1516,6 +1544,7 @@ function onPitchPointer(e){
       x: x + Math.cos(perp) * 7 * ptr.side,
       y: y + Math.sin(perp) * 7 * ptr.side,
       ang: heading + Math.PI / 2,   // sole's toe faces direction of travel
+      side: ptr.side,               // which foot: mirrors the sole shape
       born: now,
     });
     if (cleats.length > PITCH_CFG.MARK_MAX) cleats.splice(0, cleats.length - PITCH_CFG.MARK_MAX);
@@ -1569,30 +1598,50 @@ function stepBall(ts, now){
   if (spd < 0.03){ pball.vx = 0; pball.vy = 0; spd = 0; }
   pball.rot += (pball.vx >= 0 ? 1 : -1) * spd / R * ts * 0.9;
 
-  // walls, goal mouths, nets
-  const { x0, x1, y0, y1, cx } = G;
+  // walls, goal mouths, nets (goal ends depend on pitch orientation)
+  const { x0, x1, y0, y1, cx, cy } = G;
   const mouth = G.goalW / 2 - 6;
   const REST = PITCH_CFG.RESTITUTION;
-  const inMouth = Math.abs(pball.x - cx) < mouth;
 
-  if (pball.x < x0 + R){ pball.x = x0 + R; pball.vx =  Math.abs(pball.vx) * REST; }
-  if (pball.x > x1 - R){ pball.x = x1 - R; pball.vx = -Math.abs(pball.vx) * REST; }
-
-  for (const [edge, dir] of [[y0, 1], [y1, -1]]){        // dir 1 = top goal
-    const past = dir === 1 ? pball.y < edge + R : pball.y > edge - R;
-    if (!past) continue;
-    if (inMouth){
-      const crossed = dir === 1 ? pball.y < edge - R * 0.2 : pball.y > edge + R * 0.2;
-      if (crossed && !pball.celebrating) scoreGoal();
-      // keep the ball inside the net box
-      const back = dir === 1 ? edge - G.goalD + R : edge + G.goalD - R;
-      if (dir === 1 && pball.y < back){ pball.y = back; pball.vy =  Math.abs(pball.vy) * 0.25; }
-      if (dir === -1 && pball.y > back){ pball.y = back; pball.vy = -Math.abs(pball.vy) * 0.25; }
-      if (pball.x < cx - mouth + R){ pball.x = cx - mouth + R; pball.vx =  Math.abs(pball.vx) * 0.3; }
-      if (pball.x > cx + mouth - R){ pball.x = cx + mouth - R; pball.vx = -Math.abs(pball.vx) * 0.3; }
-    } else {
-      if (dir === 1){ pball.y = edge + R; pball.vy =  Math.abs(pball.vy) * REST; }
-      else          { pball.y = edge - R; pball.vy = -Math.abs(pball.vy) * REST; }
+  if (G.horiz){
+    if (pball.y < y0 + R){ pball.y = y0 + R; pball.vy =  Math.abs(pball.vy) * REST; }
+    if (pball.y > y1 - R){ pball.y = y1 - R; pball.vy = -Math.abs(pball.vy) * REST; }
+    const inMouth = Math.abs(pball.y - cy) < mouth;
+    for (const [edge, dir] of [[x0, 1], [x1, -1]]){      // dir 1 = left goal
+      const past = dir === 1 ? pball.x < edge + R : pball.x > edge - R;
+      if (!past) continue;
+      if (inMouth){
+        const crossed = dir === 1 ? pball.x < edge - R * 0.2 : pball.x > edge + R * 0.2;
+        if (crossed && !pball.celebrating) scoreGoal();
+        const back = dir === 1 ? edge - G.goalD + R : edge + G.goalD - R;
+        if (dir ===  1 && pball.x < back){ pball.x = back; pball.vx =  Math.abs(pball.vx) * 0.25; }
+        if (dir === -1 && pball.x > back){ pball.x = back; pball.vx = -Math.abs(pball.vx) * 0.25; }
+        if (pball.y < cy - mouth + R){ pball.y = cy - mouth + R; pball.vy =  Math.abs(pball.vy) * 0.3; }
+        if (pball.y > cy + mouth - R){ pball.y = cy + mouth - R; pball.vy = -Math.abs(pball.vy) * 0.3; }
+      } else {
+        if (dir === 1){ pball.x = edge + R; pball.vx =  Math.abs(pball.vx) * REST; }
+        else          { pball.x = edge - R; pball.vx = -Math.abs(pball.vx) * REST; }
+      }
+    }
+  } else {
+    if (pball.x < x0 + R){ pball.x = x0 + R; pball.vx =  Math.abs(pball.vx) * REST; }
+    if (pball.x > x1 - R){ pball.x = x1 - R; pball.vx = -Math.abs(pball.vx) * REST; }
+    const inMouth = Math.abs(pball.x - cx) < mouth;
+    for (const [edge, dir] of [[y0, 1], [y1, -1]]){      // dir 1 = top goal
+      const past = dir === 1 ? pball.y < edge + R : pball.y > edge - R;
+      if (!past) continue;
+      if (inMouth){
+        const crossed = dir === 1 ? pball.y < edge - R * 0.2 : pball.y > edge + R * 0.2;
+        if (crossed && !pball.celebrating) scoreGoal();
+        const back = dir === 1 ? edge - G.goalD + R : edge + G.goalD - R;
+        if (dir ===  1 && pball.y < back){ pball.y = back; pball.vy =  Math.abs(pball.vy) * 0.25; }
+        if (dir === -1 && pball.y > back){ pball.y = back; pball.vy = -Math.abs(pball.vy) * 0.25; }
+        if (pball.x < cx - mouth + R){ pball.x = cx - mouth + R; pball.vx =  Math.abs(pball.vx) * 0.3; }
+        if (pball.x > cx + mouth - R){ pball.x = cx + mouth - R; pball.vx = -Math.abs(pball.vx) * 0.3; }
+      } else {
+        if (dir === 1){ pball.y = edge + R; pball.vy =  Math.abs(pball.vy) * REST; }
+        else          { pball.y = edge - R; pball.vy = -Math.abs(pball.vy) * REST; }
+      }
     }
   }
 }
@@ -1691,15 +1740,30 @@ function drawCleats(g, now){
     g.save();
     g.translate(m.x, m.y);
     g.rotate(m.ang);
-    g.fillStyle = 'rgba(84,108,68,' + (0.34 * a).toFixed(3) + ')';
-    // six studs: 2×2 forefoot + 2 heel
-    for (const [dx, dy] of [[-2.6,-4.5],[2.6,-4.5],[-2.8,-0.8],[2.8,-0.8],[-2,4.6],[2,4.6]]){
-      g.beginPath(); g.ellipse(dx, dy, 1.5, 2, 0, 0, Math.PI * 2); g.fill();
+    g.scale(m.side, 1);                       // mirror: alternating left/right boots
+    // shoe sole pressed into the grass: forefoot, midfoot, heel
+    g.fillStyle = 'rgba(84,108,68,' + (0.30 * a).toFixed(3) + ')';
+    g.beginPath(); g.ellipse( 0.5, -3.6, 3.0, 4.4, -0.14, 0, Math.PI * 2); g.fill(); // forefoot (big-toe bulge)
+    g.beginPath(); g.ellipse(-0.2,  1.2, 2.1, 2.6,  0.16, 0, Math.PI * 2); g.fill(); // midfoot
+    g.beginPath(); g.ellipse(-0.4,  5.4, 2.1, 2.7,  0.10, 0, Math.PI * 2); g.fill(); // heel
+    // stud impressions
+    g.fillStyle = 'rgba(52,72,42,' + (0.34 * a).toFixed(3) + ')';
+    for (const [dx, dy] of [[-1.4,-5.4],[1.9,-5.2],[-1.6,-2.2],[2.1,-2.4],[-1.1,5.2],[0.7,5.7]]){
+      g.beginPath(); g.arc(dx, dy, 0.8, 0, Math.PI * 2); g.fill();
     }
     g.restore();
   }
 }
 function easeOutBack(k){ const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }
+function pentPath(g, x, y, r, rot){
+  g.beginPath();
+  for (let i = 0; i < 5; i++){
+    const a = rot + i * Math.PI * 2 / 5;
+    const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  }
+  g.closePath();
+}
 function drawPitchBall(g, now){
   const R = PITCH_CFG.BALL_RADIUS;
   let scale = 1;
@@ -1710,19 +1774,33 @@ function drawPitchBall(g, now){
   // grass shadow
   g.fillStyle = 'rgba(60,80,50,0.18)';
   g.beginPath(); g.ellipse(2, R * 0.78, R * 0.95, R * 0.42, 0, 0, Math.PI * 2); g.fill();
-  // body
+  // white body
   const grad = g.createRadialGradient(-R * 0.4, -R * 0.45, R * 0.2, 0, 0, R);
   grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#d9dde2');
   g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2);
   g.fillStyle = grad; g.fill();
-  g.lineWidth = 1.2; g.strokeStyle = 'rgba(70,80,90,0.55)'; g.stroke();
-  // rolling seams
+  g.lineWidth = 1.2; g.strokeStyle = 'rgba(60,66,74,0.6)'; g.stroke();
+  // classic black pentagon panels, clipped to the ball, rolling with it
+  g.save();
+  g.beginPath(); g.arc(0, 0, R - 0.6, 0, Math.PI * 2); g.clip();
   g.rotate(pball.rot);
-  g.strokeStyle = 'rgba(70,80,90,0.5)'; g.lineWidth = 1.2;
-  g.beginPath(); g.arc(-R * 0.15, 0, R * 0.62, -1.1, 1.1); g.stroke();
-  g.beginPath(); g.arc( R * 0.55, 0, R * 0.5, Math.PI - 0.9, Math.PI + 0.9); g.stroke();
-  g.fillStyle = 'rgba(60,70,80,0.5)';
-  g.beginPath(); g.arc(-R * 0.15, 0, R * 0.16, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#2e3237';
+  pentPath(g, 0, 0, R * 0.40, -Math.PI / 2); g.fill();        // centre panel
+  for (let i = 0; i < 5; i++){                                 // rim panels, partly visible
+    const a = -Math.PI / 2 + i * Math.PI * 2 / 5 + Math.PI / 5;
+    pentPath(g, Math.cos(a) * R * 0.88, Math.sin(a) * R * 0.88, R * 0.34, a + Math.PI / 5);
+    g.fill();
+  }
+  // seams from the centre panel out to the rim panels
+  g.strokeStyle = 'rgba(60,70,80,0.4)'; g.lineWidth = 1;
+  for (let i = 0; i < 5; i++){
+    const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+    g.beginPath();
+    g.moveTo(Math.cos(a) * R * 0.40, Math.sin(a) * R * 0.40);
+    g.lineTo(Math.cos(a) * R * 0.72, Math.sin(a) * R * 0.72);
+    g.stroke();
+  }
+  g.restore();
   g.restore();
 }
 function drawFx(ts, now){
