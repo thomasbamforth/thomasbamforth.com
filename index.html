@@ -38,6 +38,21 @@ body{
 }
 [hidden]{ display:none !important; }
 
+/* ---------- INTERACTIVE PITCH BACKGROUND ---------- */
+/* Two fixed canvases: the pitch behind everything, confetti above content. */
+#pitch-canvas{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+#fx-canvas{    position:fixed; inset:0; z-index:40; pointer-events:none; }
+.hero, .game-section, .board-section, footer{ position:relative; z-index:1; }
+
+/* Frosted-glass panels that float over the pitch */
+.glass{
+  background:rgba(253,252,248,.78);
+  -webkit-backdrop-filter:blur(14px) saturate(1.05);
+  backdrop-filter:blur(14px) saturate(1.05);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:0 24px 70px rgba(45,65,35,.10), 0 2px 10px rgba(45,65,35,.05);
+}
+
 /* ---------- HERO ---------- */
 .hero{
   min-height:92svh;
@@ -49,9 +64,20 @@ body{
   text-align:center;
   padding:3rem 1.5rem 4.5rem;
   position:relative;
-  background:
-    radial-gradient(1200px 600px at 50% -10%, #eef3fb 0%, rgba(238,243,251,0) 60%),
-    var(--paper);
+  background:none; /* the pitch canvas shows through */
+}
+.hero-card{
+  border-radius:32px;
+  padding:clamp(2.2rem, 6vw, 3.6rem) clamp(1.6rem, 6vw, 4.2rem);
+  max-width:min(92vw, 780px);
+}
+/* staggered entrance */
+@keyframes rise{ from{ opacity:0; transform:translateY(22px); } to{ opacity:1; transform:translateY(0); } }
+.hero-card h1{       animation:rise .8s cubic-bezier(.16,.8,.3,1) .05s backwards; }
+.hero-card .tagline{ animation:rise .8s cubic-bezier(.16,.8,.3,1) .16s backwards; }
+.hero-card .cta{     animation:rise .8s cubic-bezier(.16,.8,.3,1) .28s backwards; }
+@media (prefers-reduced-motion: reduce){
+  .hero-card h1, .hero-card .tagline, .hero-card .cta{ animation:none; }
 }
 .hero h1{
   margin:0 0 .7rem;
@@ -92,9 +118,18 @@ body{
   position:absolute;
   bottom:1.5rem;
   left:0; right:0;
+  margin:0 auto;
+  width:max-content;
+  max-width:92vw;
   color:var(--muted);
   font-size:.9rem;
   font-family:var(--mono);
+  background:rgba(253,252,248,.72);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:999px;
+  padding:.45rem 1.05rem;
   animation:bob 2.2s ease-in-out infinite;
 }
 @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(6px);} }
@@ -102,9 +137,10 @@ body{
 
 /* ---------- GAME SECTION ---------- */
 .game-section{
-  max-width:860px;
-  margin:0 auto;
-  padding:1rem 1rem 4rem;
+  width:min(880px, 94vw);
+  margin:0 auto 2.6rem;
+  padding:2rem 1rem 2.5rem;
+  border-radius:28px;
 }
 .game-intro{
   text-align:center;
@@ -213,10 +249,11 @@ kbd{
 
 /* ---------- leaderboard ---------- */
 .board-section{
-  max-width:560px;
-  margin:0 auto;
-  padding:0 1rem 4rem;
+  width:min(560px, 94vw);
+  margin:0 auto 2.6rem;
+  padding:1.7rem 1rem 2rem;
   text-align:center;
+  border-radius:24px;
 }
 .board-section h2{
   font-family:var(--mono);
@@ -340,8 +377,10 @@ footer{
   text-align:center;
   color:var(--muted);
   font-size:.85rem;
-  padding:2rem 1rem 2.6rem;
-  border-top:1px solid var(--edge);
+  width:min(680px, 94vw);
+  margin:0 auto 2.4rem;
+  padding:1.5rem 1.25rem;
+  border-radius:20px;
 }
 footer a{ color:var(--linkedin); font-weight:600; text-decoration:none; }
 footer a:hover{ text-decoration:underline; }
@@ -349,26 +388,33 @@ footer a:hover{ text-decoration:underline; }
 </head>
 <body>
 
+<!-- Interactive pitch background (drawn by JS; sits behind everything).
+     The fx canvas carries confetti + the GOAL! splash above the content. -->
+<canvas id="pitch-canvas" aria-hidden="true"></canvas>
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+
 <!-- ================= HERO ================= -->
 <header class="hero">
-  <h1>Welcome to My Website</h1>
-  <!-- EDIT ME: your one-line tagline -->
-  <p class="tagline">I do serious things. This page is not one of them.</p>
+  <div class="hero-card glass">
+    <h1>Welcome to My Website</h1>
+    <!-- EDIT ME: your one-line tagline -->
+    <p class="tagline">I do serious things. This page is not one of them.</p>
 
-  <!-- The CTA. Keep this the loudest thing on the page. -->
-  <a class="cta" href="https://www.linkedin.com/in/thomas-bamforth/" target="_blank" rel="noopener noreferrer">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect width="24" height="24" rx="4.5" fill="#ffffff"/>
-      <path fill="#0a66c2" d="M7.06 8.87H4.66V19.2h2.4V8.87zM5.86 7.7a1.44 1.44 0 1 0 0-2.88 1.44 1.44 0 0 0 0 2.88zm13.36 5.6c0-2.6-1.39-3.81-3.24-3.81-1.49 0-2.16.82-2.53 1.4V8.87h-2.4V19.2h2.4v-5.86c0-1.08.2-2.13 1.54-2.13 1.32 0 1.34 1.23 1.34 2.2v5.79h2.4l-.01-5.9z"/>
-    </svg>
-    Business inquiries? Reach me on LinkedIn
-  </a>
+    <!-- The CTA. Keep this the loudest thing on the page. -->
+    <a class="cta" href="https://www.linkedin.com/in/thomas-bamforth/" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="4.5" fill="#ffffff"/>
+        <path fill="#0a66c2" d="M7.06 8.87H4.66V19.2h2.4V8.87zM5.86 7.7a1.44 1.44 0 1 0 0-2.88 1.44 1.44 0 0 0 0 2.88zm13.36 5.6c0-2.6-1.39-3.81-3.24-3.81-1.49 0-2.16.82-2.53 1.4V8.87h-2.4V19.2h2.4v-5.86c0-1.08.2-2.13 1.54-2.13 1.32 0 1.34 1.23 1.34 2.2v5.79h2.4l-.01-5.9z"/>
+      </svg>
+      Business inquiries? Reach me on LinkedIn
+    </a>
+  </div>
 
   <div class="scroll-hint">▼ scroll for something less professional ▼</div>
 </header>
 
 <!-- ================= GAME ================= -->
-<main class="game-section" id="game-section">
+<main class="game-section glass" id="game-section">
   <div class="game-intro">
     <h2>…or stick around and kill some time</h2>
     <p>Help <strong>Crumby the Pie</strong> outrun the cutlery.
@@ -393,7 +439,7 @@ footer a:hover{ text-decoration:underline; }
 </main>
 
 <!-- ================= LEADERBOARD ================= -->
-<section class="board-section" id="board-section">
+<section class="board-section glass" id="board-section">
   <h2>🏆 The Pie League</h2>
   <p class="board-sub" id="board-sub">Top 10 runs — finish a run, claim your spot.</p>
   <ol id="board-list"></ol>
@@ -412,7 +458,7 @@ footer a:hover{ text-decoration:underline; }
   </div>
 </div>
 
-<footer>
+<footer class="glass">
   © <span id="year"></span> Thomas Bamforth ·
   <a href="https://www.linkedin.com/in/thomas-bamforth/" target="_blank" rel="noopener noreferrer">LinkedIn</a><br><br>
   Crumby the Pie is an original pixel doodle, lovingly inspired by a certain Latics legend.
@@ -1291,6 +1337,471 @@ window.PieRunner = {
   get score(){ return score; },
   get speed(){ return speed; },
   start: startRun,
+};
+
+/* ============================================================
+   INTERACTIVE PITCH BACKGROUND
+   A full-window vertical soccer pitch behind the whole page.
+   • the cursor / finger leaves fading cleat marks in the grass
+   • a ball with real-ish physics sits on the centre spot —
+     run the cursor through it to kick it
+   • score in either goal → confetti, air horns, crowd roar,
+     and the ball resets to the centre circle
+
+   ┌─────────────────────────────────────────────────────────┐
+   │ TWEAK ME — all the feel lives in PITCH_CFG below.       │
+   └─────────────────────────────────────────────────────────┘
+   Debug: window.Pitch  (e.g. Pitch.score() to force a goal)
+   ============================================================ */
+const PITCH_CFG = {
+  FOOT_RADIUS:   22,     // size of the invisible "boot" around the cursor
+  BALL_RADIUS:   13,
+  FRICTION:      0.9885, // per-frame roll decay (lower = ball stops sooner)
+  RESTITUTION:   0.72,   // bounciness off the touchlines
+  MAX_SPEED:     26,     // ball speed cap, px per frame
+  KICK_TRANSFER: 0.92,   // how much cursor velocity transfers into the ball
+  MARK_SPACING:  30,     // px of cursor travel between footprints
+  MARK_LIFE:     2400,   // ms a cleat mark lingers
+  MARK_MAX:      110,    // most footprints kept at once
+  CONFETTI:      170,    // particles per goal
+};
+
+const pcv  = document.getElementById('pitch-canvas');
+const fcv  = document.getElementById('fx-canvas');
+const pctx = pcv.getContext('2d');
+const fctx = fcv.getContext('2d');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let PW = 0, PH = 0;
+const pitchLayer = document.createElement('canvas'); // static pitch, prerendered
+let G = null;                                        // pitch geometry
+
+const pball = { x: 0, y: 0, vx: 0, vy: 0, rot: 0, celebrating: false, popT: 0 };
+let cleats = [];
+let confetti = [];
+let goalFlash = -1;      // 0..1 progress of the GOAL! splash, -1 = idle
+let kickCooldown = 0;
+let fxWasActive = false;
+let pitchActiveUntil = 0; // we stop repainting shortly after everything settles
+
+const ptr = { x:-9999, y:-9999, px:-9999, py:-9999, vx:0, vy:0, has:false, walked:0, side:1, lastT:0 };
+
+/* ---------- geometry + prerendered pitch art ---------- */
+function computeGeom(){
+  const mx = Math.max(16, PW * 0.05);
+  const my = Math.max(46, PH * 0.075);
+  const x0 = mx, x1 = PW - mx, y0 = my, y1 = PH - my;
+  const w = x1 - x0, h = y1 - y0;
+  G = {
+    x0, x1, y0, y1, w, h, cx: PW / 2, cy: PH / 2,
+    circleR: Math.min(w, h) * 0.135,
+    goalW: Math.min(w * 0.36, 250),           // goal mouth width
+    goalD: Math.min(my - 8, 34),              // net depth beyond the line
+    penW: Math.min(w * 0.62, 460), penD: h * 0.15,
+    sixW: Math.min(w * 0.32, 240), sixD: h * 0.066,
+    spotD: h * 0.105,
+  };
+}
+function chalkLine(g, ax, ay, bx, by){ g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); }
+function chalkCircle(g, x, y, r){ g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); }
+function chalkDot(g, x, y, r){ g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,0.92)'; g.fill(); }
+function chalkBox(g, cx, edgeY, w, d, dir){ // dir 1 = box extends downward from edge
+  g.strokeRect(cx - w / 2, dir === 1 ? edgeY : edgeY - d, w, d);
+}
+function drawNet(g, cx, lineY, w, d, dir){ // dir -1 = net extends up beyond the line
+  const x = cx - w / 2, y = dir === -1 ? lineY - d : lineY;
+  g.fillStyle = 'rgba(255,255,255,0.16)';
+  g.fillRect(x, y, w, d);
+  g.save();
+  g.strokeStyle = 'rgba(255,255,255,0.45)';
+  g.lineWidth = 1;
+  for (let i = 7; i < w; i += 7)  chalkLine(g, x + i, y, x + i, y + d);
+  for (let j = 7; j < d; j += 7)  chalkLine(g, x, y + j, x + w, y + j);
+  g.restore();
+  g.save();
+  g.strokeStyle = 'rgba(255,255,255,0.95)';
+  g.lineWidth = 3;
+  g.strokeRect(x, y, w, d);
+  g.restore();
+}
+function prerenderPitch(dpr){
+  pitchLayer.width = pcv.width; pitchLayer.height = pcv.height;
+  const g = pitchLayer.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // mowing stripes across the whole window
+  const bands = 14, bh = PH / bands;
+  for (let i = 0; i < bands; i++){
+    g.fillStyle = i % 2 ? '#e6ecd8' : '#ebf0df';
+    g.fillRect(0, i * bh, PW, bh + 1);
+  }
+  // gentle vignette for depth
+  const vg = g.createRadialGradient(G.cx, G.cy, Math.min(PW, PH) * 0.3, G.cx, G.cy, Math.max(PW, PH) * 0.75);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(120,140,100,0.10)');
+  g.fillStyle = vg; g.fillRect(0, 0, PW, PH);
+
+  // chalk markings
+  g.strokeStyle = 'rgba(255,255,255,0.92)';
+  g.lineWidth = 2; g.lineCap = 'round'; g.lineJoin = 'round';
+  const { x0, x1, y0, y1, cx, cy } = G;
+  g.strokeRect(x0, y0, G.w, G.h);                 // touchlines
+  chalkLine(g, x0, cy, x1, cy);                   // halfway line
+  chalkCircle(g, cx, cy, G.circleR);              // centre circle
+  chalkDot(g, cx, cy, 3);                         // centre spot
+
+  for (const dir of [1, -1]){                     // 1 = top end, -1 = bottom end
+    const edge = dir === 1 ? y0 : y1;
+    chalkBox(g, cx, edge, G.penW, G.penD, dir);
+    chalkBox(g, cx, edge, G.sixW, G.sixD, dir);
+    const spotY = edge + dir * G.spotD;
+    chalkDot(g, cx, spotY, 2.5);
+    // penalty arc — only the part outside the box
+    const r = G.circleR * 0.75;
+    const dy = G.penD - G.spotD;
+    const a = Math.asin(Math.min(1, Math.max(-1, dy / r)));
+    g.beginPath();
+    if (dir === 1) g.arc(cx, spotY, r, a, Math.PI - a);
+    else           g.arc(cx, spotY, r, Math.PI + a, -a);
+    g.stroke();
+  }
+  // corner arcs
+  g.beginPath(); g.arc(x0, y0, 12, 0, Math.PI / 2);            g.stroke();
+  g.beginPath(); g.arc(x1, y0, 12, Math.PI / 2, Math.PI);      g.stroke();
+  g.beginPath(); g.arc(x1, y1, 12, Math.PI, Math.PI * 1.5);    g.stroke();
+  g.beginPath(); g.arc(x0, y1, 12, Math.PI * 1.5, Math.PI * 2);g.stroke();
+  // goals
+  drawNet(g, cx, y0, G.goalW, G.goalD, -1);
+  drawNet(g, cx, y1, G.goalW, G.goalD, 1);
+}
+function pitchResize(){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  PW = window.innerWidth; PH = window.innerHeight;
+  for (const [cv, g] of [[pcv, pctx], [fcv, fctx]]){
+    cv.width = Math.round(PW * dpr); cv.height = Math.round(PH * dpr);
+    cv.style.width = PW + 'px'; cv.style.height = PH + 'px';
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  computeGeom();
+  prerenderPitch(dpr);
+  pball.x = Math.min(Math.max(pball.x, G.x0 + 20), G.x1 - 20);
+  pball.y = Math.min(Math.max(pball.y, G.y0 + 20), G.y1 - 20);
+  pitchActiveUntil = performance.now() + 500;
+}
+
+/* ---------- pointer: velocity tracking + cleat footprints ---------- */
+function onPitchPointer(e){
+  const now = performance.now();
+  const x = e.clientX, y = e.clientY;
+  if (!ptr.has){
+    ptr.has = true; ptr.x = ptr.px = x; ptr.y = ptr.py = y; ptr.lastT = now;
+    return;
+  }
+  const dt = Math.max(4, now - ptr.lastT);
+  const ivx = (x - ptr.x) / dt * 16.67, ivy = (y - ptr.y) / dt * 16.67; // px/frame
+  ptr.vx = ptr.vx * 0.55 + ivx * 0.45;
+  ptr.vy = ptr.vy * 0.55 + ivy * 0.45;
+  ptr.px = ptr.x; ptr.py = ptr.y;
+  ptr.x = x; ptr.y = y; ptr.lastT = now;
+
+  // drop alternating left/right footprints along the path
+  const d = Math.hypot(x - ptr.px, y - ptr.py);
+  ptr.walked += d;
+  if (ptr.walked >= PITCH_CFG.MARK_SPACING && d > 0.5){
+    ptr.walked = 0;
+    ptr.side *= -1;
+    const heading = Math.atan2(y - ptr.py, x - ptr.px);
+    const perp = heading + Math.PI / 2;
+    cleats.push({
+      x: x + Math.cos(perp) * 7 * ptr.side,
+      y: y + Math.sin(perp) * 7 * ptr.side,
+      ang: heading + Math.PI / 2,   // sole's toe faces direction of travel
+      born: now,
+    });
+    if (cleats.length > PITCH_CFG.MARK_MAX) cleats.splice(0, cleats.length - PITCH_CFG.MARK_MAX);
+  }
+  pitchActiveUntil = now + 500;
+}
+window.addEventListener('pointermove', onPitchPointer, { passive: true });
+window.addEventListener('pointerdown', (e)=>{ unlockAudio(); onPitchPointer(e); }, { passive: true });
+window.addEventListener('keydown', unlockAudio, { passive: true });
+
+/* ---------- ball physics ---------- */
+function segCircleDist(ax, ay, bx, by, px, py){
+  const dx = bx - ax, dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + dx * t, cy = ay + dy * t;
+  return { d: Math.hypot(px - cx, py - cy), cx, cy };
+}
+function stepBall(ts, now){
+  const R = PITCH_CFG.BALL_RADIUS;
+  if (kickCooldown > 0) kickCooldown -= ts;
+
+  // kick: sweep the cursor's last movement segment against the ball
+  if (ptr.has && !pball.celebrating && kickCooldown <= 0){
+    const hit = segCircleDist(ptr.px, ptr.py, ptr.x, ptr.y, pball.x, pball.y);
+    if (hit.d < PITCH_CFG.FOOT_RADIUS + R){
+      const sp = Math.hypot(ptr.vx, ptr.vy);
+      let nx = pball.x - hit.cx, ny = pball.y - hit.cy;
+      const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+      pball.vx = ptr.vx * PITCH_CFG.KICK_TRANSFER + nx * Math.max(2.5, sp * 0.25);
+      pball.vy = ptr.vy * PITCH_CFG.KICK_TRANSFER + ny * Math.max(2.5, sp * 0.25);
+      const spd = Math.hypot(pball.vx, pball.vy);
+      if (spd > PITCH_CFG.MAX_SPEED){
+        pball.vx *= PITCH_CFG.MAX_SPEED / spd;
+        pball.vy *= PITCH_CFG.MAX_SPEED / spd;
+      }
+      pball.x = hit.cx + nx * (PITCH_CFG.FOOT_RADIUS + R + 0.5);
+      pball.y = hit.cy + ny * (PITCH_CFG.FOOT_RADIUS + R + 0.5);
+      kickCooldown = 5;
+      if (sp > 7) kickThud();
+    }
+  }
+
+  // integrate + roll friction
+  pball.x += pball.vx * ts;
+  pball.y += pball.vy * ts;
+  const f = Math.pow(PITCH_CFG.FRICTION, ts);
+  pball.vx *= f; pball.vy *= f;
+  let spd = Math.hypot(pball.vx, pball.vy);
+  if (spd < 0.03){ pball.vx = 0; pball.vy = 0; spd = 0; }
+  pball.rot += (pball.vx >= 0 ? 1 : -1) * spd / R * ts * 0.9;
+
+  // walls, goal mouths, nets
+  const { x0, x1, y0, y1, cx } = G;
+  const mouth = G.goalW / 2 - 6;
+  const REST = PITCH_CFG.RESTITUTION;
+  const inMouth = Math.abs(pball.x - cx) < mouth;
+
+  if (pball.x < x0 + R){ pball.x = x0 + R; pball.vx =  Math.abs(pball.vx) * REST; }
+  if (pball.x > x1 - R){ pball.x = x1 - R; pball.vx = -Math.abs(pball.vx) * REST; }
+
+  for (const [edge, dir] of [[y0, 1], [y1, -1]]){        // dir 1 = top goal
+    const past = dir === 1 ? pball.y < edge + R : pball.y > edge - R;
+    if (!past) continue;
+    if (inMouth){
+      const crossed = dir === 1 ? pball.y < edge - R * 0.2 : pball.y > edge + R * 0.2;
+      if (crossed && !pball.celebrating) scoreGoal();
+      // keep the ball inside the net box
+      const back = dir === 1 ? edge - G.goalD + R : edge + G.goalD - R;
+      if (dir === 1 && pball.y < back){ pball.y = back; pball.vy =  Math.abs(pball.vy) * 0.25; }
+      if (dir === -1 && pball.y > back){ pball.y = back; pball.vy = -Math.abs(pball.vy) * 0.25; }
+      if (pball.x < cx - mouth + R){ pball.x = cx - mouth + R; pball.vx =  Math.abs(pball.vx) * 0.3; }
+      if (pball.x > cx + mouth - R){ pball.x = cx + mouth - R; pball.vx = -Math.abs(pball.vx) * 0.3; }
+    } else {
+      if (dir === 1){ pball.y = edge + R; pball.vy =  Math.abs(pball.vy) * REST; }
+      else          { pball.y = edge - R; pball.vy = -Math.abs(pball.vy) * REST; }
+    }
+  }
+}
+function scoreGoal(){
+  pball.celebrating = true;
+  celebrate();
+  setTimeout(()=>{
+    pball.x = G.cx; pball.y = G.cy;
+    pball.vx = 0; pball.vy = 0;
+    pball.celebrating = false;
+    pball.popT = performance.now();      // little scale-in pop on respawn
+    pitchActiveUntil = performance.now() + 600;
+  }, 1400);
+}
+
+/* ---------- celebration: confetti + GOAL! + stadium audio ---------- */
+function celebrate(){
+  if (!reduceMotion){
+    const colors = ['#2246a8', '#ffffff', '#f2c14e', '#8fb7e8', '#173178'];
+    for (let i = 0; i < PITCH_CFG.CONFETTI; i++){
+      confetti.push({
+        x: Math.random() * PW,
+        y: -20 - Math.random() * PH * 0.4,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: 2.2 + Math.random() * 3.4,
+        w: 4 + Math.random() * 5,
+        h: 7 + Math.random() * 7,
+        rot: Math.random() * 7,
+        vr: (Math.random() - 0.5) * 0.25,
+        ph: Math.random() * 7,
+        color: colors[i % colors.length],
+      });
+    }
+    goalFlash = 0;
+  }
+  airHorn();
+  crowdRoar();
+  pitchActiveUntil = performance.now() + 600;
+}
+/* synthesized stadium sounds — reuse the game's audio context + mute toggle */
+function airHorn(){
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  for (const [start, dur] of [[0, 0.45], [0.55, 0.85]]){    // two blasts
+    const g = audioCtx.createGain(); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.0001, t + start);
+    g.gain.exponentialRampToValueAtTime(0.085, t + start + 0.03);
+    g.gain.setValueAtTime(0.085, t + start + dur - 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + start + dur);
+    const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.connect(g);
+    for (const det of [0, 9, -7]){
+      const o = audioCtx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(455, t + start);
+      o.frequency.linearRampToValueAtTime(436, t + start + dur);
+      o.detune.value = det;
+      o.connect(lp); o.start(t + start); o.stop(t + start + dur + 0.02);
+    }
+  }
+}
+function crowdRoar(){
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime, sr = audioCtx.sampleRate;
+  const buf = audioCtx.createBuffer(1, sr * 3.2, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
+  bp.frequency.setValueAtTime(750, t);
+  bp.frequency.linearRampToValueAtTime(1100, t + 0.5);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.15, t + 0.35);     // roar swells in
+  g.gain.setValueAtTime(0.15, t + 1.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 3.1);    // and dies down
+  src.connect(bp); bp.connect(g); g.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 3.2);
+}
+function kickThud(){
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(120, t);
+  o.frequency.exponentialRampToValueAtTime(55, t + 0.09);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.05, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + 0.12);
+}
+
+/* ---------- drawing ---------- */
+function drawCleats(g, now){
+  for (const m of cleats){
+    const a = 1 - (now - m.born) / PITCH_CFG.MARK_LIFE;
+    if (a <= 0) continue;
+    g.save();
+    g.translate(m.x, m.y);
+    g.rotate(m.ang);
+    g.fillStyle = 'rgba(84,108,68,' + (0.34 * a).toFixed(3) + ')';
+    // six studs: 2×2 forefoot + 2 heel
+    for (const [dx, dy] of [[-2.6,-4.5],[2.6,-4.5],[-2.8,-0.8],[2.8,-0.8],[-2,4.6],[2,4.6]]){
+      g.beginPath(); g.ellipse(dx, dy, 1.5, 2, 0, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+  }
+}
+function easeOutBack(k){ const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }
+function drawPitchBall(g, now){
+  const R = PITCH_CFG.BALL_RADIUS;
+  let scale = 1;
+  if (pball.popT && now - pball.popT < 350) scale = easeOutBack((now - pball.popT) / 350) * 0.999;
+  g.save();
+  g.translate(pball.x, pball.y);
+  g.scale(scale, scale);
+  // grass shadow
+  g.fillStyle = 'rgba(60,80,50,0.18)';
+  g.beginPath(); g.ellipse(2, R * 0.78, R * 0.95, R * 0.42, 0, 0, Math.PI * 2); g.fill();
+  // body
+  const grad = g.createRadialGradient(-R * 0.4, -R * 0.45, R * 0.2, 0, 0, R);
+  grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#d9dde2');
+  g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2);
+  g.fillStyle = grad; g.fill();
+  g.lineWidth = 1.2; g.strokeStyle = 'rgba(70,80,90,0.55)'; g.stroke();
+  // rolling seams
+  g.rotate(pball.rot);
+  g.strokeStyle = 'rgba(70,80,90,0.5)'; g.lineWidth = 1.2;
+  g.beginPath(); g.arc(-R * 0.15, 0, R * 0.62, -1.1, 1.1); g.stroke();
+  g.beginPath(); g.arc( R * 0.55, 0, R * 0.5, Math.PI - 0.9, Math.PI + 0.9); g.stroke();
+  g.fillStyle = 'rgba(60,70,80,0.5)';
+  g.beginPath(); g.arc(-R * 0.15, 0, R * 0.16, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+function drawFx(ts, now){
+  fctx.clearRect(0, 0, PW, PH);
+  // confetti
+  confetti = confetti.filter(p => p.y < PH + 40);
+  for (const p of confetti){
+    p.x += (p.vx + Math.sin(now / 300 + p.ph) * 0.6) * ts;
+    p.y += p.vy * ts;
+    p.rot += p.vr * ts;
+    fctx.save();
+    fctx.translate(p.x, p.y);
+    fctx.rotate(p.rot);
+    fctx.fillStyle = p.color;
+    fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    fctx.restore();
+  }
+  // GOAL! splash
+  if (goalFlash >= 0){
+    goalFlash += ts / 90;                       // ~1.5s total
+    if (goalFlash > 1){ goalFlash = -1; }
+    else {
+      const k = Math.min(1, goalFlash * 2.2);
+      const scale = 0.6 + 0.4 * easeOutBack(k);
+      const alpha = goalFlash < 0.75 ? 1 : 1 - (goalFlash - 0.75) / 0.25;
+      const size = Math.min(PW * 0.18, 130);
+      fctx.save();
+      fctx.translate(PW / 2, PH / 2);
+      fctx.rotate(-0.05);
+      fctx.scale(scale, scale);
+      fctx.globalAlpha = alpha;
+      fctx.font = 'italic 900 ' + size + 'px ' + '-apple-system, "Segoe UI", Arial, sans-serif';
+      fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
+      fctx.lineWidth = size * 0.06; fctx.strokeStyle = '#ffffff';
+      fctx.strokeText('GOAL!', 0, 0);
+      fctx.fillStyle = '#2246a8';
+      fctx.fillText('GOAL!', 0, 0);
+      fctx.restore();
+    }
+  }
+}
+
+/* ---------- main loop (skips repainting once everything settles) ---------- */
+let pitchLast = performance.now();
+function pitchLoop(now){
+  const ts = Math.min(3, (now - pitchLast) / (1000 / 60));
+  pitchLast = now;
+
+  stepBall(ts, now);
+  cleats = cleats.filter(m => now - m.born < PITCH_CFG.MARK_LIFE);
+
+  const moving = Math.hypot(pball.vx, pball.vy) > 0.01 ||
+                 (pball.popT && now - pball.popT < 400) || cleats.length;
+  if (moving) pitchActiveUntil = now + 300;
+
+  if (now < pitchActiveUntil){
+    pctx.clearRect(0, 0, PW, PH);
+    pctx.drawImage(pitchLayer, 0, 0, PW, PH);
+    drawCleats(pctx, now);
+    drawPitchBall(pctx, now);
+  }
+
+  const fxActive = confetti.length > 0 || goalFlash >= 0;
+  if (fxActive){ drawFx(ts, now); fxWasActive = true; }
+  else if (fxWasActive){ fctx.clearRect(0, 0, PW, PH); fxWasActive = false; }
+
+  requestAnimationFrame(pitchLoop);
+}
+
+pitchResize();
+pball.x = G.cx; pball.y = G.cy;                 // kick-off position: centre spot
+window.addEventListener('resize', pitchResize);
+requestAnimationFrame(pitchLoop);
+
+/* Console playground for the pitch */
+window.Pitch = {
+  cfg: PITCH_CFG,
+  ball: pball,
+  score: scoreGoal,
 };
 </script>
 </body>
