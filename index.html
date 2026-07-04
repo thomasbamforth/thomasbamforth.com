@@ -1364,6 +1364,10 @@ const PITCH_CFG = {
   MARK_LIFE:     2400,   // ms a cleat mark lingers
   MARK_MAX:      110,    // most footprints kept at once
   CONFETTI:      170,    // particles per goal
+  KEEPER_SPAN:   46,     // goalkeeper arm span, px
+  KEEPER_BODY:   8,      // keeper collider thickness (capsule radius)
+  KEEPER_BOUNCE: 0.85,   // how lively a save rebounds
+  KEEPER_RANGE:  0.70,   // fraction of the goal mouth each keeper patrols
 };
 
 const pcv  = document.getElementById('pitch-canvas');
@@ -1382,7 +1386,12 @@ let confetti = [];
 let goalFlash = -1;      // 0..1 progress of the GOAL! splash, -1 = idle
 let kickCooldown = 0;
 let fxWasActive = false;
-let pitchActiveUntil = 0; // we stop repainting shortly after everything settles
+
+/* two keepers in two different bright kits, patrolling out of sync */
+const keepers = [
+  { end:  1, color: '#ff6b1a', trim: '#ffffff', phase: 0,             speed: 0.00090 }, // top / left goal
+  { end: -1, color: '#e6007e', trim: '#ffffff', phase: Math.PI * 0.7, speed: 0.00075 }, // bottom / right goal
+];
 
 const ptr = { x:-9999, y:-9999, px:-9999, py:-9999, vx:0, vy:0, has:false, walked:0, side:1, lastT:0 };
 
@@ -1514,7 +1523,6 @@ function pitchResize(){
   prerenderPitch(dpr);
   pball.x = Math.min(Math.max(pball.x, G.x0 + 20), G.x1 - 20);
   pball.y = Math.min(Math.max(pball.y, G.y0 + 20), G.y1 - 20);
-  pitchActiveUntil = performance.now() + 500;
 }
 
 /* ---------- pointer: velocity tracking + cleat footprints ---------- */
@@ -1549,11 +1557,82 @@ function onPitchPointer(e){
     });
     if (cleats.length > PITCH_CFG.MARK_MAX) cleats.splice(0, cleats.length - PITCH_CFG.MARK_MAX);
   }
-  pitchActiveUntil = now + 500;
 }
 window.addEventListener('pointermove', onPitchPointer, { passive: true });
 window.addEventListener('pointerdown', (e)=>{ unlockAudio(); onPitchPointer(e); }, { passive: true });
 window.addEventListener('keydown', unlockAudio, { passive: true });
+
+/* ---------- goalkeepers ---------- */
+/* Position, arm axis, and velocity of a keeper at time `now`.
+   They sweep KEEPER_RANGE of the goal mouth on a slow sine. */
+function keeperState(k, now){
+  const A = reduceMotion ? 0 : G.goalW * PITCH_CFG.KEEPER_RANGE / 2;
+  const off = Math.sin(now * k.speed + k.phase) * A;
+  const vel = Math.cos(now * k.speed + k.phase) * A * k.speed * 16.7;  // px per frame
+  if (G.horiz){
+    return { x: k.end === 1 ? G.x0 + 7 : G.x1 - 7, y: G.cy + off, ax: 0, ay: 1, vx: 0, vy: vel };
+  }
+  return { x: G.cx + off, y: k.end === 1 ? G.y0 + 7 : G.y1 - 7, ax: 1, ay: 0, vx: vel, vy: 0 };
+}
+/* Save! Ball bounces off a keeper's arms/body — and only off the keeper;
+   shots past them still go in. Reflection accounts for the keeper's own
+   motion, so a moving keeper punches the ball away harder. */
+function keeperCollide(now){
+  const R = PITCH_CFG.BALL_RADIUS;
+  const minD = PITCH_CFG.KEEPER_BODY + R;
+  const half = PITCH_CFG.KEEPER_SPAN / 2 - PITCH_CFG.KEEPER_BODY;
+  for (const k of keepers){
+    const s = keeperState(k, now);
+    const hit = segCircleDist(s.x - s.ax * half, s.y - s.ay * half,
+                              s.x + s.ax * half, s.y + s.ay * half,
+                              pball.x, pball.y);
+    if (hit.d >= minD) continue;
+    const nx = (pball.x - hit.cx) / (hit.d || 1);
+    const ny = (pball.y - hit.cy) / (hit.d || 1);
+    pball.x = hit.cx + nx * (minD + 0.5);            // push the ball out of the keeper
+    pball.y = hit.cy + ny * (minD + 0.5);
+    const rvx = pball.vx - s.vx, rvy = pball.vy - s.vy;
+    const vn = rvx * nx + rvy * ny;                  // approach speed along the normal
+    if (vn < 0){
+      pball.vx -= (1 + PITCH_CFG.KEEPER_BOUNCE) * vn * nx;
+      pball.vy -= (1 + PITCH_CFG.KEEPER_BOUNCE) * vn * ny;
+      kickThud();
+    }
+  }
+}
+function drawKeepers(g, now){
+  const half = PITCH_CFG.KEEPER_SPAN / 2;
+  for (const k of keepers){
+    const s = keeperState(k, now);
+    g.save();
+    g.translate(s.x, s.y);
+    g.rotate(Math.atan2(s.ay, s.ax));                // local x runs along the arms
+    // drop shadow
+    g.fillStyle = 'rgba(60,80,50,0.16)';
+    g.beginPath(); g.ellipse(1.5, 2.5, half, 8, 0, 0, Math.PI * 2); g.fill();
+    // outstretched arms
+    g.strokeStyle = k.color; g.lineWidth = 7; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-half + 4, 0); g.lineTo(half - 4, 0); g.stroke();
+    // shoulders / torso
+    g.fillStyle = k.color;
+    g.beginPath(); g.ellipse(0, 0, 12, 8.5, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = k.trim; g.lineWidth = 1.5;
+    g.beginPath(); g.ellipse(0, 0, 12, 8.5, 0, 0, Math.PI * 2); g.stroke();
+    // gloves
+    g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(60,66,74,0.5)'; g.lineWidth = 1;
+    for (const sideX of [-1, 1]){
+      g.beginPath(); g.arc(sideX * (half - 2), 0, 4.5, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    g.restore();
+    // head from above: hair crescent at the back, face toward the pitch
+    const fx = G.horiz ? (k.end === 1 ? 1 : -1) : 0;
+    const fy = G.horiz ? 0 : (k.end === 1 ? 1 : -1);
+    g.fillStyle = '#4a3628';
+    g.beginPath(); g.arc(s.x - fx * 2, s.y - fy * 2, 5.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e0aa7e';
+    g.beginPath(); g.arc(s.x + fx * 1.2, s.y + fy * 1.2, 5, 0, Math.PI * 2); g.fill();
+  }
+}
 
 /* ---------- ball physics ---------- */
 function segCircleDist(ax, ay, bx, by, px, py){
@@ -1597,6 +1676,9 @@ function stepBall(ts, now){
   let spd = Math.hypot(pball.vx, pball.vy);
   if (spd < 0.03){ pball.vx = 0; pball.vy = 0; spd = 0; }
   pball.rot += (pball.vx >= 0 ? 1 : -1) * spd / R * ts * 0.9;
+
+  // keeper saves happen before the goal line is checked
+  if (!pball.celebrating) keeperCollide(now);
 
   // walls, goal mouths, nets (goal ends depend on pitch orientation)
   const { x0, x1, y0, y1, cx, cy } = G;
@@ -1653,7 +1735,6 @@ function scoreGoal(){
     pball.vx = 0; pball.vy = 0;
     pball.celebrating = false;
     pball.popT = performance.now();      // little scale-in pop on respawn
-    pitchActiveUntil = performance.now() + 600;
   }, 1400);
 }
 
@@ -1679,7 +1760,6 @@ function celebrate(){
   }
   airHorn();
   crowdRoar();
-  pitchActiveUntil = performance.now() + 600;
 }
 /* synthesized stadium sounds — reuse the game's audio context + mute toggle */
 function airHorn(){
@@ -1831,6 +1911,7 @@ function drawHalo(now){
   fctx.beginPath(); fctx.arc(x, y, R, 0, Math.PI * 2); fctx.clip();
   fctx.drawImage(pitchLayer, 0, 0, PW, PH);                    // grass + chalk under the ball
   drawCleats(fctx, now);                                       // any fresh footprints too
+  drawKeepers(fctx, now);                                      // keepers, if one is nearby
   drawPitchBall(fctx, now);                                    // and the ball itself
   // white rim fading inward (strongest at the edge, gone by mid-lens)
   const pulse = 0.82 + 0.18 * Math.sin(now / 320);
@@ -1895,19 +1976,19 @@ function pitchLoop(now){
   const ts = Math.min(3, (now - pitchLast) / (1000 / 60));
   pitchLast = now;
 
+  // belt-and-braces: some browsers defer resize events (e.g. hidden tabs)
+  if (window.innerWidth !== PW || window.innerHeight !== PH) pitchResize();
+
   stepBall(ts, now);
   cleats = cleats.filter(m => now - m.born < PITCH_CFG.MARK_LIFE);
 
-  const moving = Math.hypot(pball.vx, pball.vy) > 0.01 ||
-                 (pball.popT && now - pball.popT < 400) || cleats.length;
-  if (moving) pitchActiveUntil = now + 300;
-
-  if (now < pitchActiveUntil){
-    pctx.clearRect(0, 0, PW, PH);
-    pctx.drawImage(pitchLayer, 0, 0, PW, PH);
-    drawCleats(pctx, now);
-    drawPitchBall(pctx, now);
-  }
+  // keepers patrol continuously, so the pitch repaints every frame
+  // (rAF pauses automatically when the tab is hidden)
+  pctx.clearRect(0, 0, PW, PH);
+  pctx.drawImage(pitchLayer, 0, 0, PW, PH);
+  drawCleats(pctx, now);
+  drawKeepers(pctx, now);
+  drawPitchBall(pctx, now);
 
   const halo = ballUnderPanel();
   const fxActive = confetti.length > 0 || goalFlash >= 0 || halo;
