@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thomas Bamforth</title>
+<meta name="description" content="Thomas Bamforth — personal site. Business inquiries via LinkedIn. Also: a pie you can make jump over cutlery.">
+<meta property="og:title" content="Thomas Bamforth">
+<meta property="og:description" content="Business inquiries via LinkedIn. Also: a pie you can make jump over cutlery.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥧</text></svg>">
+<style>
+/* ============================================================
+   THOMAS BAMFORTH — single-file personal site
+   Hero + LinkedIn CTA on top, "Crumby the Pie" runner below.
+   Everything (CSS, JS, sprites, country data) lives in this file.
+   ============================================================ */
+
+:root{
+  --ink:      #14181f;   /* main text */
+  --muted:    #6b7280;   /* secondary text */
+  --paper:    #faf9f6;   /* page background */
+  --linkedin: #0a66c2;   /* CTA blue */
+  --wigan:    #2246a8;   /* mascot blue, used for accents */
+  --edge:     #e5e2d8;   /* borders */
+  --mono:     ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  --sans:     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  touch-action:manipulation; /* kills double-tap zoom on mobile taps */
+}
+[hidden]{ display:none !important; }
+
+/* ---------- HERO ---------- */
+.hero{
+  min-height:92svh;
+  min-height:92vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:3rem 1.5rem 4.5rem;
+  position:relative;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #eef3fb 0%, rgba(238,243,251,0) 60%),
+    var(--paper);
+}
+.hero h1{
+  margin:0 0 .7rem;
+  font-size:clamp(2.9rem, 10vw, 5.4rem);
+  line-height:1.02;
+  letter-spacing:-.03em;
+  font-weight:800;
+}
+.hero .tagline{
+  margin:0 0 2.4rem;
+  font-size:clamp(1.05rem, 2.6vw, 1.35rem);
+  color:var(--muted);
+  max-width:34em;
+}
+
+/* The CTA — the focal point of the page. */
+.cta{
+  display:inline-flex;
+  align-items:center;
+  gap:.75rem;
+  background:var(--linkedin);
+  color:#fff;
+  text-decoration:none;
+  font-weight:650;
+  font-size:clamp(1rem, 2.4vw, 1.15rem);
+  padding:1.05rem 1.7rem;
+  border-radius:14px;
+  box-shadow:0 12px 30px rgba(10,102,194,.32), 0 2px 6px rgba(10,102,194,.25);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.cta:hover, .cta:focus-visible{
+  transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(10,102,194,.4), 0 3px 8px rgba(10,102,194,.3);
+}
+.cta svg{ width:24px; height:24px; flex:none; }
+
+.scroll-hint{
+  position:absolute;
+  bottom:1.5rem;
+  left:0; right:0;
+  color:var(--muted);
+  font-size:.9rem;
+  font-family:var(--mono);
+  animation:bob 2.2s ease-in-out infinite;
+}
+@keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(6px);} }
+@media (prefers-reduced-motion: reduce){ .scroll-hint{ animation:none; } }
+
+/* ---------- GAME SECTION ---------- */
+.game-section{
+  max-width:860px;
+  margin:0 auto;
+  padding:1rem 1rem 4rem;
+}
+.game-intro{
+  text-align:center;
+  margin-bottom:1.4rem;
+}
+.game-intro h2{
+  font-family:var(--mono);
+  font-size:clamp(1.05rem, 3vw, 1.3rem);
+  font-weight:700;
+  margin:0 0 .4rem;
+}
+.game-intro p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+.game-intro .why{
+  margin-top:.55rem;
+  font-size:.85rem;
+}
+.game-intro .why strong{ color:var(--wigan); }
+kbd{
+  font-family:var(--mono);
+  font-size:.85em;
+  background:#fff;
+  border:1px solid var(--edge);
+  border-bottom-width:2px;
+  border-radius:5px;
+  padding:.05em .45em;
+}
+
+#game-wrap{
+  position:relative;
+  border:2px solid var(--edge);
+  border-radius:14px;
+  overflow:hidden;
+  background:#f2f7fb;
+  user-select:none;
+  -webkit-user-select:none;
+}
+#game{
+  display:block;
+  width:100%;
+  height:auto;
+  image-rendering:pixelated;      /* crisp pixels when scaled */
+  image-rendering:crisp-edges;
+  cursor:pointer;
+}
+#mute-btn{
+  position:absolute;
+  top:.55rem; left:.55rem;
+  z-index:5;
+  border:1px solid var(--edge);
+  background:rgba(255,255,255,.85);
+  border-radius:9px;
+  font-size:1.05rem;
+  line-height:1;
+  padding:.4rem .5rem;
+  cursor:pointer;
+}
+#mute-btn:hover{ background:#fff; }
+.game-caption{
+  text-align:center;
+  color:var(--muted);
+  font-size:.85rem;
+  font-family:var(--mono);
+  margin-top:.7rem;
+}
+
+/* ---------- claim banner (appears after a leaderboard-worthy run) ---------- */
+#claim{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:.6rem;
+  margin-top:.9rem;
+  padding:.8rem 1rem;
+  background:#fff;
+  border:2px solid var(--wigan);
+  border-radius:12px;
+  font-family:var(--mono);
+  font-size:.9rem;
+}
+#claim-form{ display:flex; gap:.5rem; }
+#claim-name{
+  font:inherit;
+  font-family:var(--mono);
+  padding:.45rem .6rem;
+  border:1px solid var(--edge);
+  border-radius:8px;
+  width:11em;
+}
+#claim-form button{
+  font:inherit;
+  font-family:var(--mono);
+  font-weight:700;
+  padding:.45rem .8rem;
+  border:none;
+  border-radius:8px;
+  background:var(--wigan);
+  color:#fff;
+  cursor:pointer;
+}
+#claim-form button:hover{ background:var(--linkedin); }
+
+/* ---------- leaderboard ---------- */
+.board-section{
+  max-width:560px;
+  margin:0 auto;
+  padding:0 1rem 4rem;
+  text-align:center;
+}
+.board-section h2{
+  font-family:var(--mono);
+  font-size:1.15rem;
+  margin:0 0 .3rem;
+}
+.board-sub{
+  color:var(--muted);
+  font-size:.85rem;
+  margin:0 0 1.1rem;
+}
+#board-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  font-family:var(--mono);
+  font-size:.95rem;
+  text-align:left;
+}
+#board-list li{
+  display:flex;
+  align-items:baseline;
+  gap:.6rem;
+  padding:.5rem .7rem;
+  border-bottom:1px dashed var(--edge);
+}
+#board-list li:first-child{ background:#fdf7e7; border-radius:8px 8px 0 0; }
+#board-list .rank{ width:2em; flex:none; color:var(--muted); }
+#board-list .who{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#board-list .dots{
+  flex:1;
+  border-bottom:1px dotted var(--edge);
+  min-width:1.5em;
+}
+#board-list .pts{ font-weight:700; }
+#board-empty{
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:.9rem;
+}
+
+/* ---------- QUIZ MODAL (fail + continue) ---------- */
+#quiz-overlay{
+  position:fixed; inset:0;
+  z-index:50;
+  background:rgba(17,24,39,.58);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.quiz-card{
+  background:#fff;
+  border-radius:18px;
+  padding:1.5rem 1.4rem 1.2rem;
+  width:min(420px, 100%);
+  text-align:center;
+  box-shadow:0 30px 70px rgba(0,0,0,.35);
+}
+.quiz-kicker{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:1.05rem;
+  margin-bottom:.9rem;
+}
+#quiz-flag{
+  width:min(260px, 82%);
+  border:1px solid var(--edge);
+  border-radius:8px;
+  background:#f3f4f6;
+  min-height:60px;
+  display:inline-block;
+}
+.quiz-q{
+  font-weight:650;
+  margin:.9rem 0 .8rem;
+  font-size:1.05rem;
+}
+#quiz-opts{
+  display:grid;
+  gap:.5rem;
+}
+#quiz-opts button{
+  font:inherit;
+  font-size:.98rem;
+  text-align:left;
+  padding:.7rem .9rem;
+  border:2px solid var(--edge);
+  border-radius:11px;
+  background:#fff;
+  cursor:pointer;
+  transition:border-color .1s ease, background .1s ease;
+}
+#quiz-opts button:hover:not(:disabled){ border-color:var(--wigan); background:#f4f7fd; }
+#quiz-opts button:disabled{ cursor:default; }
+#quiz-opts button .num{
+  font-family:var(--mono);
+  color:var(--muted);
+  margin-right:.55rem;
+}
+#quiz-opts button.correct{ border-color:#16a34a; background:#ecfdf3; }
+#quiz-opts button.wrong{   border-color:#dc2626; background:#fef2f2; }
+#quiz-result{
+  min-height:1.3em;
+  margin:.75rem 0 .1rem;
+  font-weight:650;
+}
+.quiz-note{
+  color:var(--muted);
+  font-size:.8rem;
+  font-family:var(--mono);
+  margin-top:.5rem;
+}
+
+/* ---------- FOOTER ---------- */
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.85rem;
+  padding:2rem 1rem 2.6rem;
+  border-top:1px solid var(--edge);
+}
+footer a{ color:var(--linkedin); font-weight:600; text-decoration:none; }
+footer a:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <h1>Welcome to My Website</h1>
+  <!-- EDIT ME: your one-line tagline -->
+  <p class="tagline">I do serious things. This page is not one of them.</p>
+
+  <!-- The CTA. Keep this the loudest thing on the page. -->
+  <a class="cta" href="https://www.linkedin.com/in/thomas-bamforth/" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect width="24" height="24" rx="4.5" fill="#ffffff"/>
+      <path fill="#0a66c2" d="M7.06 8.87H4.66V19.2h2.4V8.87zM5.86 7.7a1.44 1.44 0 1 0 0-2.88 1.44 1.44 0 0 0 0 2.88zm13.36 5.6c0-2.6-1.39-3.81-3.24-3.81-1.49 0-2.16.82-2.53 1.4V8.87h-2.4V19.2h2.4v-5.86c0-1.08.2-2.13 1.54-2.13 1.32 0 1.34 1.23 1.34 2.2v5.79h2.4l-.01-5.9z"/>
+    </svg>
+    Business inquiries? Reach me on LinkedIn
+  </a>
+
+  <div class="scroll-hint">▼ scroll for something less professional ▼</div>
+</header>
+
+<!-- ================= GAME ================= -->
+<main class="game-section" id="game-section">
+  <div class="game-intro">
+    <h2>…or stick around and kill some time</h2>
+    <p>Help <strong>Crumby the Pie</strong> outrun the cutlery.
+       <kbd>Space</kbd> / <kbd>↑</kbd> / tap to jump. Crash and you'll face the flag quiz.</p>
+    <p class="why">Born of two great loves of mine: <strong>Wigan Athletic</strong> (GO LATICS 🔵⚪️) and flag trivia.</p>
+  </div>
+
+  <div id="game-wrap">
+    <button id="mute-btn" aria-label="Toggle sound">🔊</button>
+    <canvas id="game" width="800" height="260"></canvas>
+  </div>
+  <p class="game-caption">right answer = keep your run · wrong answer = back to zero</p>
+
+  <!-- appears when a finished run is good enough for the leaderboard -->
+  <div id="claim" hidden>
+    <span id="claim-text"></span>
+    <form id="claim-form">
+      <input id="claim-name" maxlength="20" placeholder="your name" autocomplete="off" aria-label="Your name for the leaderboard">
+      <button type="submit">add me</button>
+    </form>
+  </div>
+</main>
+
+<!-- ================= LEADERBOARD ================= -->
+<section class="board-section" id="board-section">
+  <h2>🏆 The Pie League</h2>
+  <p class="board-sub">Top 10 runs on this device — finish a run, claim your spot.</p>
+  <ol id="board-list"></ol>
+  <p id="board-empty">No entries yet. The table awaits its first legend.</p>
+</section>
+
+<!-- ================= QUIZ MODAL ================= -->
+<div id="quiz-overlay" hidden>
+  <div class="quiz-card" role="dialog" aria-modal="true" aria-label="Continue quiz">
+    <div class="quiz-kicker">💥 CRUMBS! Want to continue?</div>
+    <img id="quiz-flag" alt="A national flag — but whose?">
+    <div class="quiz-q">What country is this?</div>
+    <div id="quiz-opts"></div>
+    <div id="quiz-result"></div>
+    <div class="quiz-note">✔ continue where you crashed &nbsp;·&nbsp; ✘ back to the start</div>
+  </div>
+</div>
+
+<footer>
+  © <span id="year"></span> Thomas Bamforth ·
+  <a href="https://www.linkedin.com/in/thomas-bamforth/" target="_blank" rel="noopener noreferrer">LinkedIn</a><br>
+  This whole page exists because I love Wigan Athletic (GO LATICS) and flag trivia.<br>
+  Crumby the Pie is an original pixel doodle, lovingly inspired by a certain Latics legend.
+</footer>
+
+<noscript><p style="text-align:center">The game needs JavaScript — but the LinkedIn button above works fine without it.</p></noscript>
+
+<script>
+'use strict';
+/* ============================================================
+   CRUMBY THE PIE — an endless runner in the spirit of the
+   Chrome T-Rex game, starring an original pixel-art pie mascot.
+
+   ┌─────────────────────────────────────────────────────────┐
+   │ TWEAK ME — everything game-feel lives in CONFIG below.  │
+   └─────────────────────────────────────────────────────────┘
+   Debug helpers: open the console and poke `window.PieRunner`
+   (e.g. PieRunner.crash() to force the flag quiz).
+   ============================================================ */
+
+const CONFIG = {
+  /* --- Jump physics (units: canvas px per frame @60fps) --- */
+  GRAVITY:        0.6,    // downward pull per frame
+  JUMP_VELOCITY:  -11.6,  // initial upward speed (more negative = higher jump)
+  JUMP_CUTOFF:    -4,     // release jump early → velocity clamps here (short hops)
+  FAST_FALL:      1.1,    // extra gravity while holding ↓
+
+  /* --- Game speed --- */
+  SPEED_START:    6,      // starting scroll speed
+  SPEED_MAX:      13,     // top speed
+  SPEED_ACCEL:    0.0018, // speed gained per frame (raise for a faster ramp)
+
+  /* --- Obstacle frequency --- */
+  OBSTACLE_MIN_GAP:          300,  // base minimum px between obstacles
+  OBSTACLE_GAP_SPEED_FACTOR: 30,   // extra gap per unit of speed (keeps it fair)
+  OBSTACLE_GAP_VARIANCE:     380,  // random extra gap, 0..this
+  OBSTACLE_PAIR_CHANCE:      0.35, // chance an obstacle is a clustered pair
+  PAIRS_AFTER_SPEED:         7.2,  // pairs only appear once speed passes this
+
+  /* --- Scoring --- */
+  SCORE_DIVISOR:  40,     // score = distance / this (lower = faster scoring)
+  MILESTONE:      100,    // beep + flash every N points
+
+  /* --- Fail + continue mechanic --- */
+  RESUME_CLEAR_AHEAD:   340, // on continue, remove obstacles within this many px ahead
+  RESUME_INVULN_FRAMES: 90,  // post-continue invincibility (blinking), in frames
+
+  /* --- Flag quiz difficulty --- */
+  FLAG_HARD_MODE: false,  // false: distractors from anywhere (easier)
+                          // true:  distractors from the same region (much harder)
+};
+
+/* ============================================================
+   COUNTRY DATA — [iso2 code, name, region]
+   Codes match flagcdn.com (https://flagcdn.com/w320/{code}.png).
+   Hardcoded so the answer key never depends on an API.
+   ============================================================ */
+const COUNTRY_DATA = [
+  /* Africa */
+  ['dz','Algeria','Africa'],['ao','Angola','Africa'],['bj','Benin','Africa'],['bw','Botswana','Africa'],
+  ['bf','Burkina Faso','Africa'],['bi','Burundi','Africa'],['cm','Cameroon','Africa'],['cv','Cape Verde','Africa'],
+  ['cf','Central African Republic','Africa'],['td','Chad','Africa'],['km','Comoros','Africa'],
+  ['cg','Republic of the Congo','Africa'],['cd','DR Congo','Africa'],['ci','Ivory Coast','Africa'],
+  ['dj','Djibouti','Africa'],['eg','Egypt','Africa'],['gq','Equatorial Guinea','Africa'],['er','Eritrea','Africa'],
+  ['sz','Eswatini','Africa'],['et','Ethiopia','Africa'],['ga','Gabon','Africa'],['gm','Gambia','Africa'],
+  ['gh','Ghana','Africa'],['gn','Guinea','Africa'],['gw','Guinea-Bissau','Africa'],['ke','Kenya','Africa'],
+  ['ls','Lesotho','Africa'],['lr','Liberia','Africa'],['ly','Libya','Africa'],['mg','Madagascar','Africa'],
+  ['mw','Malawi','Africa'],['ml','Mali','Africa'],['mr','Mauritania','Africa'],['mu','Mauritius','Africa'],
+  ['ma','Morocco','Africa'],['mz','Mozambique','Africa'],['na','Namibia','Africa'],['ne','Niger','Africa'],
+  ['ng','Nigeria','Africa'],['rw','Rwanda','Africa'],['st','São Tomé and Príncipe','Africa'],
+  ['sn','Senegal','Africa'],['sc','Seychelles','Africa'],['sl','Sierra Leone','Africa'],['so','Somalia','Africa'],
+  ['za','South Africa','Africa'],['ss','South Sudan','Africa'],['sd','Sudan','Africa'],['tz','Tanzania','Africa'],
+  ['tg','Togo','Africa'],['tn','Tunisia','Africa'],['ug','Uganda','Africa'],['zm','Zambia','Africa'],
+  ['zw','Zimbabwe','Africa'],
+  /* Asia & Middle East */
+  ['af','Afghanistan','Asia'],['am','Armenia','Asia'],['az','Azerbaijan','Asia'],['bh','Bahrain','Asia'],
+  ['bd','Bangladesh','Asia'],['bt','Bhutan','Asia'],['bn','Brunei','Asia'],['kh','Cambodia','Asia'],
+  ['cn','China','Asia'],['cy','Cyprus','Asia'],['ge','Georgia','Asia'],['in','India','Asia'],
+  ['id','Indonesia','Asia'],['ir','Iran','Asia'],['iq','Iraq','Asia'],['il','Israel','Asia'],
+  ['jp','Japan','Asia'],['jo','Jordan','Asia'],['kz','Kazakhstan','Asia'],['kw','Kuwait','Asia'],
+  ['kg','Kyrgyzstan','Asia'],['la','Laos','Asia'],['lb','Lebanon','Asia'],['my','Malaysia','Asia'],
+  ['mv','Maldives','Asia'],['mn','Mongolia','Asia'],['mm','Myanmar','Asia'],['np','Nepal','Asia'],
+  ['kp','North Korea','Asia'],['om','Oman','Asia'],['pk','Pakistan','Asia'],['ps','Palestine','Asia'],
+  ['ph','Philippines','Asia'],['qa','Qatar','Asia'],['sa','Saudi Arabia','Asia'],['sg','Singapore','Asia'],
+  ['kr','South Korea','Asia'],['lk','Sri Lanka','Asia'],['sy','Syria','Asia'],['tw','Taiwan','Asia'],
+  ['tj','Tajikistan','Asia'],['th','Thailand','Asia'],['tl','Timor-Leste','Asia'],['tr','Turkey','Asia'],
+  ['tm','Turkmenistan','Asia'],['ae','United Arab Emirates','Asia'],['uz','Uzbekistan','Asia'],
+  ['vn','Vietnam','Asia'],['ye','Yemen','Asia'],
+  /* Europe */
+  ['al','Albania','Europe'],['ad','Andorra','Europe'],['at','Austria','Europe'],['by','Belarus','Europe'],
+  ['be','Belgium','Europe'],['ba','Bosnia and Herzegovina','Europe'],['bg','Bulgaria','Europe'],
+  ['hr','Croatia','Europe'],['cz','Czechia','Europe'],['dk','Denmark','Europe'],['ee','Estonia','Europe'],
+  ['fi','Finland','Europe'],['fr','France','Europe'],['de','Germany','Europe'],['gr','Greece','Europe'],
+  ['hu','Hungary','Europe'],['is','Iceland','Europe'],['ie','Ireland','Europe'],['it','Italy','Europe'],
+  ['lv','Latvia','Europe'],['li','Liechtenstein','Europe'],['lt','Lithuania','Europe'],
+  ['lu','Luxembourg','Europe'],['mt','Malta','Europe'],['md','Moldova','Europe'],['mc','Monaco','Europe'],
+  ['me','Montenegro','Europe'],['nl','Netherlands','Europe'],['mk','North Macedonia','Europe'],
+  ['no','Norway','Europe'],['pl','Poland','Europe'],['pt','Portugal','Europe'],['ro','Romania','Europe'],
+  ['ru','Russia','Europe'],['sm','San Marino','Europe'],['rs','Serbia','Europe'],['sk','Slovakia','Europe'],
+  ['si','Slovenia','Europe'],['es','Spain','Europe'],['se','Sweden','Europe'],['ch','Switzerland','Europe'],
+  ['ua','Ukraine','Europe'],['gb','United Kingdom','Europe'],['va','Vatican City','Europe'],
+  /* Americas */
+  ['ag','Antigua and Barbuda','Americas'],['ar','Argentina','Americas'],['bs','Bahamas','Americas'],
+  ['bb','Barbados','Americas'],['bz','Belize','Americas'],['bo','Bolivia','Americas'],['br','Brazil','Americas'],
+  ['ca','Canada','Americas'],['cl','Chile','Americas'],['co','Colombia','Americas'],
+  ['cr','Costa Rica','Americas'],['cu','Cuba','Americas'],['dm','Dominica','Americas'],
+  ['do','Dominican Republic','Americas'],['ec','Ecuador','Americas'],['sv','El Salvador','Americas'],
+  ['gd','Grenada','Americas'],['gt','Guatemala','Americas'],['gy','Guyana','Americas'],['ht','Haiti','Americas'],
+  ['hn','Honduras','Americas'],['jm','Jamaica','Americas'],['mx','Mexico','Americas'],
+  ['ni','Nicaragua','Americas'],['pa','Panama','Americas'],['py','Paraguay','Americas'],['pe','Peru','Americas'],
+  ['kn','Saint Kitts and Nevis','Americas'],['lc','Saint Lucia','Americas'],
+  ['vc','Saint Vincent and the Grenadines','Americas'],['sr','Suriname','Americas'],
+  ['tt','Trinidad and Tobago','Americas'],['us','United States','Americas'],['uy','Uruguay','Americas'],
+  ['ve','Venezuela','Americas'],
+  /* Oceania */
+  ['au','Australia','Oceania'],['fj','Fiji','Oceania'],['ki','Kiribati','Oceania'],
+  ['mh','Marshall Islands','Oceania'],['fm','Micronesia','Oceania'],['nr','Nauru','Oceania'],
+  ['nz','New Zealand','Oceania'],['pw','Palau','Oceania'],['pg','Papua New Guinea','Oceania'],
+  ['ws','Samoa','Oceania'],['sb','Solomon Islands','Oceania'],['to','Tonga','Oceania'],
+  ['tv','Tuvalu','Oceania'],['vu','Vanuatu','Oceania'],
+];
+const COUNTRIES = COUNTRY_DATA.map(([code,name,region]) => ({code,name,region}));
+
+/* ============================================================
+   CANVAS + BASIC STATE
+   ============================================================ */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const CW = canvas.width;   // 800 — internal resolution (CSS scales it responsively)
+const CH = canvas.height;  // 260
+const GROUND_Y = 232;      // y of the ground line
+const SCALE = 2;           // sprite pixels → canvas pixels
+
+const COLORS = {
+  sky:    '#f2f7fb',
+  ground: '#57534e',
+  hud:    '#57534e',
+  cloud:  '#ffffff',
+};
+
+/* game state machine: idle → running → quiz → (running | gameover) → running */
+let state = 'idle';
+let speed, distance, score, gapRemaining, invuln, milestoneFlash;
+let hiScore = parseInt(localStorage.getItem('tb-pie-hi') || '0', 10) || 0;
+let obstacles = [];   // {x, parts:[{img, dx, w, h}], w}
+let fastFall = false;
+
+const player = {
+  x: 56,
+  y: 0, vy: 0,
+  w: 36 * SCALE, h: 46 * SCALE,
+  onGround: true,
+  frame: 0, frameTimer: 0,
+};
+const PLAYER_TOP = GROUND_Y - player.h; // y when standing
+
+/* Forgiving hitbox (slightly inset from the sprite edges) */
+const HITBOX = { x: 5*SCALE, y: 4*SCALE, w: 26*SCALE, h: 41*SCALE };
+
+/* ============================================================
+   PIXEL-ART SPRITES — all drawn procedurally onto tiny
+   offscreen canvases, then blitted at 2x with smoothing off.
+   ============================================================ */
+function makeCanvas(w, h){
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  return [c, g];
+}
+
+/* ---- Crumby the Pie (36×46 logical px) ----
+   poses: 'run0' | 'run1' | 'jump' | 'hit' */
+function makePieSprite(pose){
+  const [c, g] = makeCanvas(36, 46);
+  const px   = (x,y,col)     => { g.fillStyle = col; g.fillRect(x,y,1,1); };
+  const rect = (x,y,w,h,col) => { g.fillStyle = col; g.fillRect(x,y,w,h); };
+
+  const C = {
+    crustA:'#d9a251', crustB:'#c08636', crustEdge:'#8a5a1e',
+    pie:'#f2d492', pieShade:'#e3bd72',
+    capW:'#f8f8f8', blue:'#2246a8', blueDark:'#173178',
+    white:'#ffffff', iris:'#2b6bd6', pupil:'#0c1b4d',
+    brow:'#a5762e', mouth:'#7c2f1d', tongue:'#e86a8a',
+    boot:'#26221f', bootHi:'#4a423c',
+  };
+
+  /* --- round pie body with braided crust rim --- */
+  const cx = 18, cy = 17, R = 15;
+  for (let y = 2; y <= 32; y++){
+    for (let x = 3; x <= 33; x++){
+      const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d > R) continue;
+      if (d > 14.2){
+        px(x, y, C.crustEdge);                     // dark outline
+      } else if (d > 11){
+        const a = Math.atan2(dy, dx);              // braid: alternating crust segments
+        const seg = Math.floor(((a + Math.PI) / (2*Math.PI)) * 16);
+        px(x, y, seg % 2 ? C.crustA : C.crustB);
+      } else {
+        px(x, y, d > 9.5 ? C.pieShade : C.pie);    // filling with soft inner shade
+      }
+    }
+  }
+
+  /* --- face --- */
+  if (pose === 'hit'){
+    // startled face: wide eyes + little "o" mouth
+    rect(10,10,5,6,C.white); rect(21,10,5,6,C.white);
+    rect(12,12,2,2,C.pupil); rect(23,12,2,2,C.pupil);
+    rect(16,20,4,4,C.mouth); rect(17,21,2,2,C.tongue);
+  } else {
+    // eyebrows
+    rect(9,9,5,1,C.brow); rect(22,9,5,1,C.brow);
+    // big friendly eyes
+    rect(10,11,5,5,C.white); rect(21,11,5,5,C.white);
+    px(10,11,C.pie); px(14,11,C.pie); px(10,15,C.pie); px(14,15,C.pie);
+    px(21,11,C.pie); px(25,11,C.pie); px(21,15,C.pie); px(25,15,C.pie);
+    rect(11,12,3,3,C.iris); rect(22,12,3,3,C.iris);
+    px(12,13,C.pupil);  px(23,13,C.pupil);
+    px(11,12,C.white);  px(22,12,C.white);   // eye highlights
+    // wide open smile: teeth on top, tongue below
+    rect(11,18,14,1,C.mouth);
+    rect(10,19,16,3,C.mouth);
+    rect(11,22,14,1,C.mouth);
+    rect(12,23,12,1,C.mouth);
+    rect(11,18,14,2,C.white);   // teeth
+    rect(13,21,10,2,C.tongue);  // tongue
+  }
+
+  /* --- little baseball cap (white crown, blue brim) --- */
+  rect(13,0,10,1,C.capW);
+  rect(12,1,12,2,C.capW);
+  rect(11,3,14,2,C.capW);
+  rect(17,1,2,2,C.blue);            // tiny badge
+  rect(10,5,20,1,C.blue);           // brim (sticks out the way he's running)
+  rect(10,6,20,1,C.blueDark);
+
+  /* --- blue gloves at his sides --- */
+  const glove = (x)=>{ rect(x,18,4,5,C.blue); rect(x,21,4,1,C.blueDark); };
+  glove(0); glove(32);
+  g.clearRect(0,18,1,1);  g.clearRect(0,22,1,1);   // round the outer corners
+  g.clearRect(35,18,1,1); g.clearRect(35,22,1,1);
+
+  /* --- shorts --- */
+  rect(11,30,14,3,C.blue);
+  rect(11,33,14,1,C.blueDark);
+
+  /* --- legs: blue/white striped socks + dark boots --- */
+  const leg = (x, topY, botY)=>{           // 3px-wide striped column
+    for (let y = topY; y < botY; y++){
+      rect(x, y, 3, 1, Math.floor((y-topY)/2) % 2 === 0 ? C.blue : C.white);
+    }
+  };
+  const boot = (x, y)=>{ rect(x-1, y, 5, 2, C.boot); px(x+3, y, C.bootHi); };
+
+  if (pose === 'run0'){                    // left leg planted, right leg kicked up
+    leg(13,34,44); boot(13,44);
+    leg(20,34,40); boot(21,40);
+  } else if (pose === 'run1'){             // mirrored
+    leg(13,34,40); boot(14,40);
+    leg(20,34,44); boot(20,44);
+  } else if (pose === 'jump'){             // legs tucked mid-air
+    leg(13,34,39); boot(12,39);
+    leg(20,34,39); boot(22,39);
+  } else {                                 // 'hit' — frozen mid-stride
+    leg(13,34,44); boot(13,44);
+    leg(20,34,44); boot(20,44);
+  }
+  return c;
+}
+
+const pieSprites = {
+  run0: makePieSprite('run0'),
+  run1: makePieSprite('run1'),
+  jump: makePieSprite('jump'),
+  hit:  makePieSprite('hit'),
+};
+
+/* ---- Cutlery obstacles ---- */
+function makeForkSprite(h){                // h = logical height, 9 wide
+  const [c, g] = makeCanvas(9, h);
+  const rect = (x,y,w,hh,col)=>{ g.fillStyle=col; g.fillRect(x,y,w,hh); };
+  const S='#c6ccd6', D='#8a92a0', O='#646c78';
+  rect(1,0,1,6,S); rect(4,0,1,6,S); rect(7,0,1,6,S);   // tines
+  rect(0,6,9,2,S); rect(0,8,9,1,D);                    // head
+  rect(2,9,5,1,S); rect(3,10,3,1,S);                   // neck taper
+  rect(3,11,3,h-12,S); rect(5,11,1,h-12,D);            // handle
+  rect(3,h-1,3,1,O);                                   // butt cap
+  return c;
+}
+function makeKnifeSprite(h){               // h = logical height, 8 wide
+  const [c, g] = makeCanvas(8, h);
+  const rect = (x,y,w,hh,col)=>{ g.fillStyle=col; g.fillRect(x,y,w,hh); };
+  const S='#cdd3dc', HL='#eef1f5', D='#8a92a0';
+  const bladeEnd = h - 9;
+  rect(3,0,2,1,S); rect(2,1,4,1,S);                    // tip
+  for (let y = 2; y < bladeEnd; y++){ rect(1,y,5,1,S); rect(1,y,1,1,HL); }
+  rect(1,bladeEnd,6,1,D);                              // bolster
+  rect(2,bladeEnd+1,4,h-bladeEnd-1,'#5a4030');         // wooden handle
+  rect(2,bladeEnd+1,1,h-bladeEnd-1,'#7a5a44');
+  return c;
+}
+
+/* Obstacle catalogue — add/remove entries or change heights freely.
+   Heights are in logical pixels (× SCALE on screen). */
+const OBSTACLE_TYPES = [
+  { make: () => makeForkSprite(18)  },   // short fork
+  { make: () => makeForkSprite(24)  },   // tall fork
+  { make: () => makeKnifeSprite(20) },   // short knife
+  { make: () => makeKnifeSprite(26) },   // tall knife
+];
+const obstacleSprites = OBSTACLE_TYPES.map(t => t.make());
+
+/* ---- clouds ---- */
+function makeCloudSprite(){
+  const [c, g] = makeCanvas(26, 10);
+  g.fillStyle = COLORS.cloud;
+  g.fillRect(4,4,18,4); g.fillRect(8,2,9,2); g.fillRect(2,6,22,2); g.fillRect(12,0,4,2);
+  return c;
+}
+const cloudSprite = makeCloudSprite();
+let clouds = [
+  {x: 120, y: 40}, {x: 420, y: 78}, {x: 660, y: 30},
+];
+let groundMarks = [];
+for (let i = 0; i < 16; i++){
+  groundMarks.push({ x: Math.random()*CW, y: GROUND_Y + 6 + Math.random()*16, w: 4 + Math.random()*14 });
+}
+
+/* ============================================================
+   SOUND — tiny WebAudio bleeps, with a persisted mute toggle.
+   ============================================================ */
+let audioCtx = null;
+let muted = localStorage.getItem('tb-pie-muted') === '1';
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.textContent = muted ? '🔇' : '🔊';
+muteBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  muted = !muted;
+  localStorage.setItem('tb-pie-muted', muted ? '1' : '0');
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  muteBtn.blur(); // so Space doesn't re-toggle it
+});
+function unlockAudio(){
+  if (!audioCtx){
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur = 0.08, type = 'square', vol = 0.04, delay = 0){
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator();
+  const gn = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  gn.gain.setValueAtTime(vol, t);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(gn); gn.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sfx = {
+  jump:      ()=> beep(620, 0.07),
+  milestone: ()=> { beep(700, 0.06); beep(950, 0.08, 'square', 0.04, 0.08); },
+  crash:     ()=> beep(160, 0.25, 'sawtooth', 0.06),
+  correct:   ()=> { beep(523,0.09); beep(659,0.09,'square',0.04,0.1); beep(784,0.14,'square',0.04,0.2); },
+  wrong:     ()=> { beep(300,0.15,'sawtooth',0.05); beep(200,0.25,'sawtooth',0.05,0.16); },
+};
+
+/* ============================================================
+   GAME LOGIC
+   ============================================================ */
+function resetRun(){
+  speed = CONFIG.SPEED_START;
+  distance = 0;
+  score = 0;
+  gapRemaining = 620;           // breathing room before the first obstacle
+  obstacles = [];
+  invuln = 0;
+  milestoneFlash = 0;
+  player.y = PLAYER_TOP;
+  player.vy = 0;
+  player.onGround = true;
+  fastFall = false;
+}
+function startRun(){
+  resetRun();
+  state = 'running';
+}
+
+function spawnObstacle(){
+  const idx = Math.floor(Math.random() * obstacleSprites.length);
+  const parts = [];
+  let sprite = obstacleSprites[idx];
+  parts.push({ img: sprite, dx: 0, w: sprite.width*SCALE, h: sprite.height*SCALE });
+  let totalW = sprite.width * SCALE;
+
+  // clustered pair? (only once the game is fast enough to clear them)
+  if (speed >= CONFIG.PAIRS_AFTER_SPEED && Math.random() < CONFIG.OBSTACLE_PAIR_CHANCE){
+    const idx2 = Math.floor(Math.random() * obstacleSprites.length);
+    const s2 = obstacleSprites[idx2];
+    const gap = 3 * SCALE;
+    parts.push({ img: s2, dx: totalW + gap, w: s2.width*SCALE, h: s2.height*SCALE });
+    totalW += gap + s2.width * SCALE;
+  }
+  obstacles.push({ x: CW + 10, parts, w: totalW });
+}
+
+function playerRect(){
+  return { x: player.x + HITBOX.x, y: player.y + HITBOX.y, w: HITBOX.w, h: HITBOX.h };
+}
+function checkCollision(){
+  const p = playerRect();
+  for (const o of obstacles){
+    for (const part of o.parts){
+      const ox = o.x + part.dx, oy = GROUND_Y - part.h;
+      // 2px of forgiveness on each obstacle edge
+      if (p.x < ox + part.w - 2 && p.x + p.w > ox + 2 &&
+          p.y < oy + part.h - 2 && p.y + p.h > oy + 2){
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function handleCrash(){
+  if (state !== 'running') return;
+  sfx.crash();
+  if (score > hiScore){ hiScore = score; localStorage.setItem('tb-pie-hi', String(hiScore)); }
+  state = 'quiz';
+  showQuiz();
+}
+
+/* Continue: resume the SAME run — same score, same speed. */
+function resumeRun(){
+  // clear anything lethal in the immediate area so the continue is fair
+  obstacles = obstacles.filter(o =>
+    (o.x + o.w < player.x - 10) || (o.x > player.x + CONFIG.RESUME_CLEAR_AHEAD));
+  invuln = CONFIG.RESUME_INVULN_FRAMES;
+  fastFall = false;
+  state = 'running';
+}
+function gameOver(){
+  state = 'gameover';
+  offerBoardSpot(score);   // leaderboard: let a worthy run claim a name
+}
+
+/* ---- main update (dt-normalised to 60fps units) ---- */
+function update(ts){
+  if (state !== 'running') return;
+
+  // speed ramps up over time
+  speed = Math.min(CONFIG.SPEED_MAX, speed + CONFIG.SPEED_ACCEL * ts);
+  distance += speed * ts;
+
+  const prevScore = score;
+  score = Math.floor(distance / CONFIG.SCORE_DIVISOR);
+  if (Math.floor(score / CONFIG.MILESTONE) > Math.floor(prevScore / CONFIG.MILESTONE)){
+    sfx.milestone();
+    milestoneFlash = 30;
+  }
+  if (milestoneFlash > 0) milestoneFlash -= ts;
+  if (score > hiScore){ hiScore = score; localStorage.setItem('tb-pie-hi', String(hiScore)); }
+
+  // physics
+  if (!player.onGround){
+    player.vy += CONFIG.GRAVITY * ts * (fastFall ? 1 + CONFIG.FAST_FALL : 1);
+    player.y  += player.vy * ts;
+    if (player.y >= PLAYER_TOP){
+      player.y = PLAYER_TOP;
+      player.vy = 0;
+      player.onGround = true;
+    }
+  }
+
+  // run cycle animation
+  if (player.onGround){
+    player.frameTimer += ts;
+    if (player.frameTimer > 6){ player.frameTimer = 0; player.frame = 1 - player.frame; }
+  }
+
+  // scroll obstacles
+  for (const o of obstacles) o.x -= speed * ts;
+  obstacles = obstacles.filter(o => o.x + o.w > -20);
+
+  // spawn new ones
+  gapRemaining -= speed * ts;
+  if (gapRemaining <= 0){
+    spawnObstacle();
+    gapRemaining = CONFIG.OBSTACLE_MIN_GAP
+                 + speed * CONFIG.OBSTACLE_GAP_SPEED_FACTOR
+                 + Math.random() * CONFIG.OBSTACLE_GAP_VARIANCE;
+  }
+
+  // scenery
+  for (const cl of clouds){
+    cl.x -= speed * 0.35 * ts;
+    if (cl.x < -60){ cl.x = CW + 30 + Math.random()*120; cl.y = 24 + Math.random()*80; }
+  }
+  for (const m of groundMarks){
+    m.x -= speed * ts;
+    if (m.x + m.w < 0){ m.x = CW + Math.random()*80; m.y = GROUND_Y + 6 + Math.random()*16; m.w = 4 + Math.random()*14; }
+  }
+
+  if (invuln > 0) invuln -= ts;
+  else if (checkCollision()) handleCrash();
+}
+
+/* ---- render ---- */
+function pad5(n){ return String(Math.max(0, Math.floor(n))).padStart(5, '0'); }
+
+function render(){
+  ctx.fillStyle = COLORS.sky;
+  ctx.fillRect(0, 0, CW, CH);
+
+  // clouds
+  for (const cl of clouds){
+    ctx.drawImage(cloudSprite, Math.round(cl.x), Math.round(cl.y), cloudSprite.width*SCALE, cloudSprite.height*SCALE);
+  }
+
+  // ground
+  ctx.fillStyle = COLORS.ground;
+  ctx.fillRect(0, GROUND_Y, CW, 2);
+  for (const m of groundMarks){
+    ctx.fillRect(Math.round(m.x), Math.round(m.y), Math.round(m.w), 2);
+  }
+
+  // obstacles
+  for (const o of obstacles){
+    for (const part of o.parts){
+      ctx.drawImage(part.img, Math.round(o.x + part.dx), GROUND_Y - part.h, part.w, part.h);
+    }
+  }
+
+  // player (blinks while invulnerable after a continue)
+  const blinkOff = invuln > 0 && Math.floor(invuln / 5) % 2 === 0;
+  if (!blinkOff){
+    let sprite;
+    if (state === 'quiz' || state === 'gameover') sprite = pieSprites.hit;
+    else if (!player.onGround)                    sprite = pieSprites.jump;
+    else                                          sprite = player.frame ? pieSprites.run1 : pieSprites.run0;
+    ctx.drawImage(sprite, Math.round(player.x), Math.round(player.y), player.w, player.h);
+  }
+
+  // HUD
+  ctx.fillStyle = COLORS.hud;
+  ctx.font = 'bold 16px ' + '"Courier New", monospace';
+  ctx.textAlign = 'right';
+  const showScore = !(milestoneFlash > 0 && Math.floor(milestoneFlash / 5) % 2 === 0);
+  const hudLeft = 'HI ' + pad5(hiScore) + '  ';
+  ctx.fillText(hudLeft + (showScore ? pad5(score) : '     '), CW - 14, 26);
+
+  // state overlays
+  ctx.textAlign = 'center';
+  if (state === 'idle'){
+    ctx.font = 'bold 18px "Courier New", monospace';
+    ctx.fillText('CRUMBY THE PIE vs THE CUTLERY', CW/2, 96);
+    ctx.font = '14px "Courier New", monospace';
+    ctx.fillText('PRESS SPACE / ↑ OR TAP TO START', CW/2, 122);
+  } else if (state === 'gameover'){
+    ctx.font = 'bold 22px "Courier New", monospace';
+    ctx.fillText('GAME OVER', CW/2, 92);
+    ctx.font = '14px "Courier New", monospace';
+    ctx.fillText('SCORE ' + pad5(score) + ' — SPACE / TAP TO TRY AGAIN', CW/2, 118);
+  }
+}
+
+/* ---- main loop ---- */
+let lastTime = performance.now();
+function loop(now){
+  // clamp dt so a background tab doesn't fast-forward the game
+  const ts = Math.min(3, (now - lastTime) / (1000/60));
+  lastTime = now;
+  update(ts);
+  render();
+  requestAnimationFrame(loop);
+}
+player.y = PLAYER_TOP;
+resetRun();
+state = 'idle';
+requestAnimationFrame(loop);
+
+/* ============================================================
+   INPUT
+   ============================================================ */
+function onJumpInput(){
+  unlockAudio();
+  if (state === 'idle' || state === 'gameover'){
+    startRun();
+  } else if (state === 'running' && player.onGround){
+    player.vy = CONFIG.JUMP_VELOCITY;
+    player.onGround = false;
+    sfx.jump();
+  }
+}
+function onJumpRelease(){
+  // variable jump height: releasing early clips upward velocity
+  if (state === 'running' && !player.onGround && player.vy < CONFIG.JUMP_CUTOFF){
+    player.vy = CONFIG.JUMP_CUTOFF;
+  }
+}
+function canvasInView(){
+  const r = canvas.getBoundingClientRect();
+  return r.top < window.innerHeight && r.bottom > 0;
+}
+
+document.addEventListener('keydown', (e)=>{
+  // never hijack keys while the user is typing (e.g. the leaderboard name field)
+  const tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+  if (quizOpen){
+    if (e.key >= '1' && e.key <= '4') pickOption(parseInt(e.key,10) - 1);
+    return;
+  }
+  if (e.code === 'Space' || e.code === 'ArrowUp'){
+    // don't hijack Space while the user is reading the hero
+    if (state === 'running' || canvasInView()){
+      e.preventDefault();
+      if (!e.repeat) onJumpInput();
+    }
+  } else if (e.code === 'ArrowDown'){
+    if (state === 'running'){ e.preventDefault(); fastFall = true; }
+  }
+});
+document.addEventListener('keyup', (e)=>{
+  if (e.code === 'Space' || e.code === 'ArrowUp') onJumpRelease();
+  if (e.code === 'ArrowDown') fastFall = false;
+});
+
+// tap / click to jump (pointerdown fires for both mouse and touch)
+canvas.addEventListener('pointerdown', (e)=>{ e.preventDefault(); onJumpInput(); });
+canvas.addEventListener('pointerup',   ()=> onJumpRelease());
+canvas.addEventListener('pointercancel', ()=> onJumpRelease());
+
+/* ============================================================
+   FLAG QUIZ — the fail + continue mechanic
+   ============================================================ */
+const overlay   = document.getElementById('quiz-overlay');
+const flagImg   = document.getElementById('quiz-flag');
+const optsBox   = document.getElementById('quiz-opts');
+const resultBox = document.getElementById('quiz-result');
+let quizOpen = false;
+let quizAnswer = null;     // index of the correct button
+let quizButtons = [];
+let quizLocked = false;
+
+function shuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function pickDistractors(correct){
+  // FLAG_HARD_MODE: distractors share the correct answer's region (harder!)
+  let pool = CONFIG.FLAG_HARD_MODE
+    ? COUNTRIES.filter(c => c.region === correct.region && c.code !== correct.code)
+    : COUNTRIES.filter(c => c.code !== correct.code);
+  pool = shuffle(pool.slice());
+  return pool.slice(0, 3);
+}
+
+function showQuiz(){
+  const correct = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+  const options = shuffle([correct, ...pickDistractors(correct)]);
+  quizAnswer = options.findIndex(o => o.code === correct.code);
+  quizLocked = false;
+  resultBox.textContent = '';
+  resultBox.style.color = '';
+
+  // flag image straight from flagcdn — the answer key itself is local
+  flagImg.src = 'https://flagcdn.com/w320/' + correct.code + '.png';
+  flagImg.onerror = ()=>{
+    // offline / blocked? don't strand the player — free pass
+    if (!quizOpen || quizLocked) return;
+    quizLocked = true;
+    resultBox.textContent = 'Flag failed to load — free pass!';
+    resultBox.style.color = '#16a34a';
+    setTimeout(()=>{ hideQuiz(); sfx.correct(); resumeRun(); }, 900);
+  };
+
+  optsBox.innerHTML = '';
+  quizButtons = options.map((opt, i)=>{
+    const b = document.createElement('button');
+    b.innerHTML = '<span class="num">' + (i+1) + '</span>' + opt.name;
+    b.addEventListener('click', ()=> pickOption(i));
+    optsBox.appendChild(b);
+    return b;
+  });
+
+  overlay.hidden = false;
+  quizOpen = true;
+}
+function hideQuiz(){
+  overlay.hidden = true;
+  quizOpen = false;
+  flagImg.onerror = null;
+  flagImg.removeAttribute('src');
+}
+function pickOption(i){
+  if (quizLocked || !quizOpen || i >= quizButtons.length) return;
+  quizLocked = true;
+  quizButtons.forEach(b => b.disabled = true);
+
+  if (i === quizAnswer){
+    quizButtons[i].classList.add('correct');
+    resultBox.textContent = '✔ Correct — go go go!';
+    resultBox.style.color = '#16a34a';
+    sfx.correct();
+    setTimeout(()=>{ hideQuiz(); resumeRun(); }, 700);
+  } else {
+    quizButtons[i].classList.add('wrong');
+    quizButtons[quizAnswer].classList.add('correct');
+    resultBox.textContent = '✘ It was ' + quizButtons[quizAnswer].textContent.replace(/^\d/, '').trim() + '. Back to the start!';
+    resultBox.style.color = '#dc2626';
+    sfx.wrong();
+    setTimeout(()=>{ hideQuiz(); gameOver(); }, 1800);
+  }
+}
+
+/* ============================================================
+   LEADERBOARD — "The Pie League"
+
+   Stored in localStorage, so it's per-browser/per-device (a truly
+   global leaderboard needs a backend — this file stays static).
+   To go global later, replace loadBoard()/persistBoard() with
+   fetch() calls to your API and everything else keeps working.
+   ============================================================ */
+const BOARD_KEY = 'tb-pie-board';
+const BOARD_MAX = 10;                 // how many entries the table keeps
+const claimBox   = document.getElementById('claim');
+const claimText  = document.getElementById('claim-text');
+const claimForm  = document.getElementById('claim-form');
+const claimName  = document.getElementById('claim-name');
+const boardList  = document.getElementById('board-list');
+const boardEmpty = document.getElementById('board-empty');
+let pendingScore = null;              // score awaiting a name
+
+function loadBoard(){
+  try {
+    const b = JSON.parse(localStorage.getItem(BOARD_KEY) || '[]');
+    return Array.isArray(b) ? b : [];
+  } catch(e){ return []; }
+}
+function persistBoard(b){
+  localStorage.setItem(BOARD_KEY, JSON.stringify(b));
+}
+function renderBoard(){
+  const board = loadBoard();
+  boardEmpty.hidden = board.length > 0;
+  boardList.innerHTML = '';
+  const medals = ['🥇','🥈','🥉'];
+  board.forEach((entry, i)=>{
+    const li = document.createElement('li');
+    const rank = document.createElement('span');
+    rank.className = 'rank';
+    rank.textContent = medals[i] || (i+1) + '.';
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = entry.name;      // textContent — names can't inject HTML
+    const dots = document.createElement('span');
+    dots.className = 'dots';
+    const pts = document.createElement('span');
+    pts.className = 'pts';
+    pts.textContent = pad5(entry.score);
+    li.append(rank, who, dots, pts);
+    boardList.appendChild(li);
+  });
+}
+function boardQualifies(s){
+  if (s <= 0) return false;
+  const board = loadBoard();
+  return board.length < BOARD_MAX || s > board[board.length - 1].score;
+}
+/* Called when a run truly ends (wrong quiz answer → game over). */
+function offerBoardSpot(s){
+  if (!boardQualifies(s)) return;
+  pendingScore = s;
+  claimText.textContent = '🏆 ' + pad5(s) + ' makes The Pie League!';
+  claimBox.hidden = false;
+}
+claimForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  if (pendingScore === null) return;
+  const name = (claimName.value.trim() || 'Anonymous Pie').slice(0, 20);
+  const board = loadBoard();
+  board.push({ name, score: pendingScore, when: Date.now() });
+  board.sort((a,b)=> b.score - a.score || a.when - b.when);
+  persistBoard(board.slice(0, BOARD_MAX));
+  pendingScore = null;
+  claimName.value = '';
+  claimBox.hidden = true;
+  renderBoard();
+  document.getElementById('board-section').scrollIntoView({ behavior:'smooth', block:'center' });
+});
+renderBoard();
+
+/* ============================================================
+   MISC
+   ============================================================ */
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* Console playground — handy for tuning:
+   PieRunner.config.JUMP_VELOCITY = -13; PieRunner.crash(); etc. */
+window.PieRunner = {
+  config: CONFIG,
+  crash: ()=> { if (state === 'idle') startRun(); handleCrash(); },
+  get state(){ return state; },
+  get score(){ return score; },
+  get speed(){ return speed; },
+  start: startRun,
+};
+</script>
+</body>
+</html>
